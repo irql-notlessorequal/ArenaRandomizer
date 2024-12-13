@@ -1,0 +1,126 @@
+/**
+ * Based upon FlamingSarge's "tf2attributes".
+ * (https://github.com/FlaminSarge/tf2attributes/)
+ */
+
+#include <sdktools>
+
+#define VSCRIPT_LOCATION "cfg/hmmr/arena-randomizer/hmmr_vscript_payload.nut"
+#define FILE_MAX_SIZE (1 * 1024 * 1024)
+
+char vscript_buffer[FILE_MAX_SIZE];
+StringMap ATTRIBUTES;
+
+public void hmmr_attribute_adapter_init() {
+	PrintToServer("[hmmr/attribute_adapter] Loading ATTRIBUTE_ADAPTER.");
+
+    if (!LoadAdapterScript()) {
+		SetFailState("[hmmr/attribute_adapter] LoadAdapterScript returned FALSE.");
+		return;
+	}
+
+	ATTRIBUTES = MakeAttrMap();
+}
+
+public bool LoadAdapterScript()
+{
+	int bufferSize = FileSize(VSCRIPT_LOCATION);
+
+	if (bufferSize <= 0) {
+		SetFailState("LoadAdapterScript: Got an invalid buffer size, you are probably missing a config file.");
+		return false;
+	}
+
+	Handle file = OpenFile(VSCRIPT_LOCATION, "r");
+
+	int read = ReadFileString(file, vscript_buffer, sizeof vscript_buffer, -1);
+	if (read != bufferSize) {
+		CloseHandle(file);
+		SetFailState("LoadAdapterScript: Did not read the expected amount. (got: %i, wanted: %i)", read, bufferSize);
+		return false;
+	}
+
+	CloseHandle(file);
+	PrintToServer("[hmmr/attribute_adapter] Successfully loaded script.");
+	return true;
+}
+
+public int __GET_COMPATIBLE_INDEX(int client)
+{
+	for (new i = 1; i < MaxClients; i++)
+	{
+		PrintToServer("idx=%i, target=%i", i, client);
+		if (i == client) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+StringMap MakeAttrMap()
+{
+	StringMap attr = new StringMap();
+	attr.SetString("2", "damage bonus");
+	attr.SetString("3", "clip size penalty");
+	attr.SetString("6", "fire rate bonus");
+	attr.SetString("16", "heal on hit for rapidfire");
+	attr.SetString("26", "max health additive bonus");
+	attr.SetString("31", "critboost on kill");
+	attr.SetString("35", "mult cloak meter regen rate");
+	attr.SetString("78", "maxammo secondary increased");
+	attr.SetString("134", "attach particle effect");
+	attr.SetString("149", "bleeding duration");
+	attr.SetString("155", "cannot disguise");
+	attr.SetString("170", "airblast cost increased");
+	attr.SetString("204", "hit self on miss");
+	attr.SetString("208", "Set DamageType Ignite");
+	attr.SetString("249", "charge recharge rate increased");
+	attr.SetString("256", "mult airblast refire time");
+	attr.SetString("402", "cannot be backstabbed");
+	attr.SetString("408", "crit vs non burning players");
+	return attr;
+}
+
+public int SetAttribute(int client, int weaponIdx, int iDefIndex, float flValue)
+{
+	int compatClient = __GET_COMPATIBLE_INDEX(client);
+	if (compatClient == -1)
+	{
+		SetFailState("SetAttribute: __GET_COMPATIBLE_INDEX failed.");
+        return false;
+	}
+
+	static int logic = INVALID_ENT_REFERENCE;
+	if (logic == INVALID_ENT_REFERENCE || !IsValidEntity(logic))
+	{
+		logic = EntIndexToEntRef(CreateEntityByName("logic_script"));
+		if (logic == INVALID_ENT_REFERENCE || !IsValidEntity(logic))
+		{
+			SetFailState("SetAttribute: Could not create 'logic_script'");
+            return false;
+		}
+
+		DispatchSpawn(logic);
+	}
+
+	char value[4];
+	IntToString(iDefIndex, value, 4);
+
+	char attr[64];
+	if (!ATTRIBUTES.GetString(value, attr, 64))
+	{
+		SetFailState("SetAttribute: GetString returned FALSE. (value=%s, iDefIndex=%i)", value, iDefIndex);
+        return false;
+	}
+
+	char _payload[FILE_MAX_SIZE];
+	Format(_payload, sizeof _payload, "%shmmr_assign_weapon_attribute(%i,%i,\"%s\",%f)", vscript_buffer, compatClient, weaponIdx, attr, flValue);
+
+	SetVariantString(_payload);
+	AcceptEntityInput(logic, "RunScriptCode");
+	AcceptEntityInput(logic, "Kill");
+
+    /* Pray that it worked */
+	return true;
+}

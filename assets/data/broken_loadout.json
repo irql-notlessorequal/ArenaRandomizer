@@ -1,0 +1,31 @@
+[
+	{
+		"classes": {
+			"all": "demoman"
+		},
+		"weapons": [
+			{
+				"id": 265,
+				"name": "tf_weapon_pipebomblauncher",
+				"slot": "secondary",
+
+				"attributes": [
+					{
+						"id": 408,
+						"name": "or_crit_vs_not_playercond",
+						"value": 1
+					}
+				]
+			},
+			{
+				"id": 307,
+				"name": "tf_weapon_stickbomb",
+				"slot": "melee"
+			}
+		],
+		"attributes": {
+			"hp": 200
+		},
+		"name": "Caber with Sticky Jumper"
+	}
+]
