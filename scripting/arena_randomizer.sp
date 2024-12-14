@@ -101,9 +101,7 @@ public void OnMapInit(const char[] mapName)
 		return;
 	}
 
-	int _strcmp = strcmp(mapName, "arena_");
-	PrintToServer("[ArenaRandomizer::OnMapInit] [DEBUG] mapName=%s, strcmp=%i", mapName, _strcmp);
-	if (_strcmp != 0)
+	if (StrContains(mapName, "arena_") != 0)
 	{
 		/* Not an arena map. */
 		IsArenaRandomizer = false;
