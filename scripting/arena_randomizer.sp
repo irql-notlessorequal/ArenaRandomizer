@@ -1,28 +1,8 @@
-#include <sourcemod>
-#include <tf2>
-#include <tf2_stocks>
-#include <sdkhooks>
-
-#include <json>
-#include <files>
-
-#include <mallet>
+#include "arena_randomizer_utils.sp"
 
 #pragma semicolon 1
 #pragma newdecls required
 #pragma dynamic 65536
-
-#define PRE_ROUND_AUDIO "hmmr/arena-randomizer/round_start.mp3"
-#define PRE_ROUND_AUDIO_FULL "sound/hmmr/arena-randomizer/round_start.mp3"
-
-#define SPECIAL_ROUND_AUDIO_BLEED "hmmr/arena-randomizer/on_hit.mp3"
-#define SPECIAL_ROUND_AUDIO_BLEED_FULL "sound/hmmr/arena-randomizer/on_hit.mp3"
-
-#define FILE_LOCATION "cfg/hmmr/arena-randomizer/loadouts.json"
-#define FILE_MAX_SIZE (1 * 1024 * 1024)
-
-#define DEFAULT_UI_ICON "leaderboard_dominated"
-#define SPECIAL_ROUND_UI_ICON "leaderboard_streak"
 
 static const char ARENA_RANDOMIZER_ROUND_START[][] = {
 	"ui/tv_tune.wav",
@@ -45,11 +25,17 @@ public Plugin myinfo =
 	url = "https://hmmr.tf/open"
 }
 
+/**
+ * 0 = Unavailable.
+ * 1 = Map Chooser (internal plugin)
+ */
+static int HasEnhancedMapDetectionSupport = MAP_DETECTION_UNAVAILABLE;
+static ArenaRandomizerSpecialRoundLogic SpecialRoundLogic = DISABLED;
+
 Handle GameTextHandle = INVALID_HANDLE;
 Handle CON_VAR_ARENA_USE_QUEUE = INVALID_HANDLE;
 int g_PlayerVisibleWeapon[MAXPLAYERS + 1] = -1;
 bool IsArenaRandomizer = true; /* TODO(rake): Put this back to false once we support multiple map change APIs and are done with testing */
-bool GenevaConventionSuggestion = false;
 JSON_Array DATA;
 
 public bool InitJsonData()
@@ -87,26 +73,9 @@ public void OnPluginStart()
 		return;
 	}
 
-	PrecacheSound(PRE_ROUND_AUDIO);
-	PrecacheSound(SPECIAL_ROUND_AUDIO_BLEED);
-
-	/* TODO(rake): We'll probably want to hard-code this into a define. */
-	for (int idx = 0; idx < 3; idx++)
+	if (HookEventEx("map_chooser_map_change", Event_MapChooser_MapLoaded, EventHookMode_PostNoCopy))
 	{
-		PrecacheSound(ARENA_RANDOMIZER_ROUND_START[idx]);
-	}
-
-	for (int idx = 0; idx < 3; idx++)
-	{
-		PrecacheSound(ARENA_RANDOMIZER_ROUND_START_SPECIAL[idx]);
-	}
-
-	AddFileToDownloadsTable(PRE_ROUND_AUDIO_FULL);
-	AddFileToDownloadsTable(SPECIAL_ROUND_AUDIO_BLEED_FULL);
-
-	if (!HookEventEx("map_chooser_map_change", Event_MapChooser_MapLoaded, EventHookMode_PostNoCopy))
-	{
-		PrintToServer("[ArenaRandomizer] [WARNING] Failed to hook into MapChooser, this might break things!");
+		HasEnhancedMapDetectionSupport = MAP_DETECTION_MAP_CHOOSER_API;
 	}
 
 	RegAdminCmd("arena_randomizer_reload", ArenaRandomizerReload, ADMFLAG_ROOT, "Reloads the loadout config.");
@@ -122,6 +91,41 @@ public void OnPluginStart()
 	}
 
 	SetConVarInt(CON_VAR_ARENA_USE_QUEUE, 0);
+}
+
+public void OnMapInit(const char[] mapName)
+{
+	if (HasEnhancedMapDetectionSupport != MAP_DETECTION_UNAVAILABLE)
+	{
+		/* Not needed. */
+		return;
+	}
+
+	if (strcmp(mapName, "arena_") != 0)
+	{
+		/* Not an arena map. */
+		IsArenaRandomizer = false;
+		return;
+	}
+
+	IsArenaRandomizer = true;
+	PrintToServer("[ArenaRandomizer] Detected %s as an Arena Randomizer Map, pre-loading audio.", mapName);
+
+	PrecacheSound(PRE_ROUND_AUDIO);
+	PrecacheSound(SPECIAL_ROUND_AUDIO_BLEED);
+
+	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
+	{
+		PrecacheSound(ARENA_RANDOMIZER_ROUND_START[idx]);
+	}
+
+	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
+	{
+		PrecacheSound(ARENA_RANDOMIZER_ROUND_START_SPECIAL[idx]);
+	}
+
+	AddFileToDownloadsTable(PRE_ROUND_AUDIO_FULL);
+	AddFileToDownloadsTable(SPECIAL_ROUND_AUDIO_BLEED_FULL);
 }
 
 public Action ArenaRandomizerReload(int client, int args)
@@ -150,7 +154,8 @@ public int GetLoadoutIdx() {
 	static int previous_roll = -1;
 
 	int roll;
-	do {
+	do
+	{
 		/* Prevent rolling the same fucking thing. */
 		roll = GetRandomInt(0, DATA.Length - 1);
 
@@ -217,39 +222,6 @@ public Action KillGameText(Handle hTimer, any iEntityRef)
     return Plugin_Stop;
 }
 
-public void SetHealthForAll(int health)
-{
-	for (int i = 1; i < MaxClients; i++)
-	{
-		if (IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			SetEntityHealth(i, health);
-		}
-	}
-}
-
-int GetRandomWeapon()
-{
-	/* TODO(rake) */
-	return -1;
-}
-
-int GetRandomAttributeID()
-{
-	/* There are more attributes but I can be bothered to take a gap into account. */
-	int _attribute = GetRandomInt(1, 881);
-	
-	/* These will crash players, re-roll instead. */
-	if (_attribute >= 554 && _attribute <= 609)
-	{
-		return GetRandomAttributeID();
-	} 
-	else
-	{
-		return _attribute;
-	}
-}
-
 bool __CONVERT_TO_COMPATIBLE_TYPE(const JSON_Object attribute, const char[] name, const JSONCellType ct, float &ret)
 {
 	switch (ct) {
@@ -292,58 +264,12 @@ public bool JSON_CONTAINS_KEY(const JSON_Object obj, const char[] key) {
 	return obj.GetIndex(key) != -1;
 }
 
-void SetClientSlot(int client, int slot)
-{
-	if (!IsValidClient(client) || !IsPlayerAlive(client))
-	{
-		return;
-	}
-
-	int weapon = GetPlayerWeaponSlot(client, slot);
-	SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
-}
-
 public void RemoveAllWeapons(int clientIdx)
 {
     for (int weaponSlot = 0; weaponSlot <= 5; weaponSlot++)
 	{
 		TF2_RemoveWeaponSlot(clientIdx, weaponSlot);
 	}
-}
-
-Action SetWeaponState(int client, bool input) {
-    int ActiveWeapon = GetEntDataEnt2(client, FindSendPropOffs("CTFPlayer", "m_hActiveWeapon"));
-    int iEntity = g_PlayerVisibleWeapon[client];
-    if (IsValidEntity(ActiveWeapon))
-	{
-        if (input == true)
-		{
-            SetEntityRenderColor(ActiveWeapon, 255, 255, 255, 255);
-            SetEntityRenderMode(ActiveWeapon, RENDER_NORMAL);
-            SetEntProp(client, Prop_Send, "m_bDrawViewmodel", 1);
-        }
-		else
-		{
-            SetEntityRenderColor(ActiveWeapon, 255, 255, 255, 0);
-            SetEntityRenderMode(ActiveWeapon, RENDER_TRANSCOLOR);
-            SetWeaponAmmo(client, 0, 0);
-            SetEntProp(client, Prop_Send, "m_bDrawViewmodel", 0);
-        }
-    }
-
-    if (iEntity > 0 && IsValidEntity(iEntity))
-	{
-        if (input == true)
-		{
-            SetEntityRenderColor(iEntity, 255, 255, 255, 255);
-            SetEntityRenderMode(iEntity, RENDER_NORMAL);
-        }
-        else
-		{
-            SetEntityRenderColor(iEntity, 255, 255, 255, 0);
-            SetEntityRenderMode(iEntity, RENDER_TRANSCOLOR);
-        }
-    }
 }
 
 public void RemoveAllWeaponsAll()
@@ -368,13 +294,17 @@ public void SetWeaponAmmoAll(int slot1, int slot2) {
 	}
 }
 
-public void SetWeaponAmmo(int client, int slot1, int slot2) {
+public void SetWeaponAmmo(int client, int slot1, int slot2)
+{
     int ActiveWeapon = GetEntDataEnt2(client, FindSendPropOffs("CTFPlayer", "m_hActiveWeapon"));
-    if (IsValidEntity(ActiveWeapon)) {
-		if (slot1 != -2) {
+    if (IsValidEntity(ActiveWeapon))
+	{
+		if (slot1 != -2)
+		{
 			SetEntData(ActiveWeapon, FindSendPropOffs("CBaseCombatWeapon", "m_iClip1"), slot1, 4);
 		}
-        if (slot2 != -2) {
+        if (slot2 != -2)
+		{
 			SetEntData(client, FindSendPropOffs("CTFPlayer", "m_iAmmo") + 4, slot2, 4);
         	SetEntData(client, FindSendPropOffs("CTFPlayer", "m_iAmmo") + 8, slot2, 4);
 		}
@@ -851,19 +781,26 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 	
 	ShowTextPrompt(_name, IsSpecialRound ? SPECIAL_ROUND_UI_ICON : DEFAULT_UI_ICON, 12.0);
 
-	GenevaConventionSuggestion = IsSpecialRound && strcmp(_name, "The Geneva Suggestion") == 0;
+	if (JSON_CONTAINS_KEY(entry, "special_round_code"))
+	{
+		/* Not my problem(tm) if the user misconfigured the loadout JSON. */
+		SpecialRoundLogic = entry.GetInt("special_round_code", DISABLED);
+	}
+	else
+	{
+		SpecialRoundLogic = DISABLED;
+	}
 
 	if (!CustomRoundStartMusic)
 	{
+		int music_idx = GetRandomInt(0, ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH - 1);
 		if (IsSpecialRound)
 		{
-			int idx = GetRandomInt(0, 2);
-			EmitSoundToAll(ARENA_RANDOMIZER_ROUND_START_SPECIAL[idx]);
+			EmitSoundToAll(ARENA_RANDOMIZER_ROUND_START_SPECIAL[music_idx]);
 		}
 		else
 		{
-			int idx = GetRandomInt(0, 2);
-			EmitSoundToAll(ARENA_RANDOMIZER_ROUND_START[idx]);
+			EmitSoundToAll(ARENA_RANDOMIZER_ROUND_START[music_idx]);
 		}
 	}
 }
@@ -894,9 +831,20 @@ public Action Event_MapChooser_MapLoaded(Event event, const char[] name, bool do
 
 public void TF2_OnConditionAdded(int client, TFCond condition)
 {
-	/* Required for that very special round, I love commiting warcrimes. */
-	if (IsArenaRandomizer && GenevaConventionSuggestion && condition == TFCond_Gas)
+	if (!IsArenaRandomizer)
+	{
+		return;
+	}
+
+	/* Required for "The Geneva Suggestion". */
+	if ((SpecialRoundLogic == GENEVA_SUGGESTION) && condition == TFCond_Gas)
 	{
 		IgniteEntity(client, 10.0);
+	}
+
+	/* Required for "On Hit: Bleed for 8 seconds." */
+	if ((SpecialRoundLogic == BLEED_FOR_EIGHT_SECONDS) && ShouldCondCauseBleed(condition))
+	{
+		TF2_MakeBleed(client, client, 8.0);
 	}
 }

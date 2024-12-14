@@ -1349,6 +1349,7 @@
 		},
 		"keep_weapons": true,
 		"special_round": true,
+		"special_round_code": 2,
 		"name": "On Hit: Bleed for 8 seconds."
 	},
 	{
@@ -1389,6 +1390,7 @@
 			"hp": 175
 		},
 		"special_round": true,
+		"special_round_code": 1,
 		"name": "The Geneva Suggestion"
 	},
 	{
