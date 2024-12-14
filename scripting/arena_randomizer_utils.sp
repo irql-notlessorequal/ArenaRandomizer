@@ -1,7 +1,7 @@
 /**
  * ArenaRandomizer.
  * 
- * This file purely provides defines (and one function) for the gamemode, to avoid cluttering the main file.
+ * This file purely provides defines and simple functions for the gamemode, to avoid cluttering the main file.
  */
 
 #include <sourcemod>
@@ -84,18 +84,22 @@ int GetRandomWeapon()
 
 int GetRandomAttributeID()
 {
-	/* There are more attributes but I can be bothered to take a gap into account. */
-	int _attribute = GetRandomInt(1, 881);
-	
-	/* These will crash players, re-roll instead. */
-	if (_attribute >= 554 && _attribute <= 609)
+	int candidate;
+	do
 	{
-		return GetRandomAttributeID();
-	} 
-	else
-	{
-		return _attribute;
-	}
+		/* There are more attributes but I can't be bothered to take a gap into account. */
+		candidate = GetRandomInt(1, 881);
+
+		/* These will crash players, re-roll instead. */
+		if (candidate >= 554 && candidate <= 609)
+		{
+			continue;
+		}
+
+		break;
+	} while (true);
+
+	return candidate;
 }
 
 void SetHealthForAll(int health)
@@ -105,6 +109,31 @@ void SetHealthForAll(int health)
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
 			SetEntityHealth(i, health);
+		}
+	}
+}
+
+void SetAllPlayersClass(TFClassType class)
+{
+	for (int i = 1; i < MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
+			TF2_SetPlayerClass(i, class);
+		}
+	}
+}
+
+void SetAllPlayersTeam(TFClassType class, TFTeam team)
+{
+	for (int i = 1; i < MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
+			if (TF2_GetClientTeam(i) == team)
+			{
+				TF2_SetPlayerClass(i, class);
+			}
 		}
 	}
 }

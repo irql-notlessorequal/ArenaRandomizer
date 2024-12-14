@@ -31,11 +31,11 @@ public Plugin myinfo =
  */
 static int HasEnhancedMapDetectionSupport = MAP_DETECTION_UNAVAILABLE;
 static ArenaRandomizerSpecialRoundLogic SpecialRoundLogic = DISABLED;
+static bool IsArenaRandomizer = true;
 
 Handle GameTextHandle = INVALID_HANDLE;
 Handle CON_VAR_ARENA_USE_QUEUE = INVALID_HANDLE;
 int g_PlayerVisibleWeapon[MAXPLAYERS + 1] = -1;
-bool IsArenaRandomizer = true; /* TODO(rake): Put this back to false once we support multiple map change APIs and are done with testing */
 JSON_Array DATA;
 
 public bool InitJsonData()
@@ -111,21 +111,8 @@ public void OnMapInit(const char[] mapName)
 	IsArenaRandomizer = true;
 	PrintToServer("[ArenaRandomizer] Detected %s as an Arena Randomizer Map, pre-loading audio.", mapName);
 
-	PrecacheSound(PRE_ROUND_AUDIO);
-	PrecacheSound(SPECIAL_ROUND_AUDIO_BLEED);
-
-	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
-	{
-		PrecacheSound(ARENA_RANDOMIZER_ROUND_START[idx]);
-	}
-
-	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
-	{
-		PrecacheSound(ARENA_RANDOMIZER_ROUND_START_SPECIAL[idx]);
-	}
-
-	AddFileToDownloadsTable(PRE_ROUND_AUDIO_FULL);
-	AddFileToDownloadsTable(SPECIAL_ROUND_AUDIO_BLEED_FULL);
+	/* Pre-load the required assets to avoid console spam. */
+	SendContentHint();
 }
 
 public Action ArenaRandomizerReload(int client, int args)
@@ -144,7 +131,26 @@ public Action ArenaRandomizerReload(int client, int args)
 	}
 }
 
-public int GetLoadoutIdx() {
+void SendContentHint()
+{
+	PrecacheSound(PRE_ROUND_AUDIO);
+	PrecacheSound(SPECIAL_ROUND_AUDIO_BLEED);
+
+	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
+	{
+		PrecacheSound(ARENA_RANDOMIZER_ROUND_START[idx]);
+	}
+
+	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
+	{
+		PrecacheSound(ARENA_RANDOMIZER_ROUND_START_SPECIAL[idx]);
+	}
+
+	AddFileToDownloadsTable(PRE_ROUND_AUDIO_FULL);
+	AddFileToDownloadsTable(SPECIAL_ROUND_AUDIO_BLEED_FULL);
+}
+
+int GetLoadoutIdx() {
 	/* Don't go into below loop otherwise we will deadlock and die. */
 	if (DATA.Length == 1)
 	{
@@ -169,31 +175,6 @@ public int GetLoadoutIdx() {
 	} while (true);
 
 	return roll;
-}
-
-public void SetAllPlayersClass(TFClassType class)
-{
-	for (int i = 1; i < MaxClients; i++)
-	{
-		if (IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			TF2_SetPlayerClass(i, class);
-		}
-	}
-}
-
-public void SetAllPlayersTeam(TFClassType class, TFTeam team)
-{
-	for (int i = 1; i < MaxClients; i++)
-	{
-		if (IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			if (TF2_GetClientTeam(i) == team)
-			{
-				TF2_SetPlayerClass(i, class);
-			}
-		}
-	}
 }
 
 public void ShowTextPrompt(const char[] strMessage, const char[] strIcon, const float duration)
