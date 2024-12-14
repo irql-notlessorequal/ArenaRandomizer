@@ -35,7 +35,6 @@ static bool IsArenaRandomizer = true;
 
 Handle GameTextHandle = INVALID_HANDLE;
 Handle CON_VAR_ARENA_USE_QUEUE = INVALID_HANDLE;
-int g_PlayerVisibleWeapon[MAXPLAYERS + 1] = -1;
 JSON_Array DATA;
 
 public bool InitJsonData()
@@ -235,12 +234,6 @@ bool __CONVERT_TO_COMPATIBLE_TYPE(const JSON_Object attribute, const char[] name
 	}
 }
 
-stock bool IsValidClient(int client) {
-    return (client >= 1 && client <= MaxClients
-		&& IsClientConnected(client) && IsClientInGame(client)
-		&& !IsClientSourceTV(client));
-}
-
 public bool JSON_CONTAINS_KEY(const JSON_Object obj, const char[] key) {
 	return obj.GetIndex(key) != -1;
 }
@@ -360,6 +353,7 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool d
 		if (printAttribs)
 		{
 			char attrStr[128];
+#if defined(BROKEN)
 			if (!MalletGetAttributeLocalization(id, attrStr, sizeof attrStr))
 			{
 				PrintToConsole(client, "[unknown attribute (%i)]: %f", id, value);
@@ -368,6 +362,9 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool d
 			{
 				PrintToConsole(client, "%s: %f", attrStr, value);
 			}
+#else
+			MalletGetAttributeDescription(id);
+#endif
 		}
 
 	}
@@ -784,6 +781,8 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 			EmitSoundToAll(ARENA_RANDOMIZER_ROUND_START[music_idx]);
 		}
 	}
+
+	PrintToChatAll("[ArenaRandomizer] This round's loadout is '%s'", _name);
 }
 
 public void RoundEndAudio(Handle event, const char[] name, bool dontBroadcast)
