@@ -78,6 +78,7 @@ public void OnPluginStart()
 	}
 
 	RegAdminCmd("arena_randomizer_reload", ArenaRandomizerReload, ADMFLAG_ROOT, "Reloads the loadout config.");
+	RegAdminCmd("arena_randomizer_running", ArenaRandomizerRunning, ADMFLAG_ROOT, "Prints Arena Randomizer's status.");
 
 	HookEvent("arena_round_start", ArenaRound, EventHookMode_PostNoCopy);
 	HookEvent("arena_win_panel", RoundEndAudio, EventHookMode_PostNoCopy);
@@ -100,7 +101,9 @@ public void OnMapInit(const char[] mapName)
 		return;
 	}
 
-	if (strcmp(mapName, "arena_") != 0)
+	int _strcmp = strcmp(mapName, "arena_");
+	PrintToServer("[ArenaRandomizer::OnMapInit] [DEBUG] mapName=%s, strcmp=%i", mapName, _strcmp);
+	if (_strcmp != 0)
 	{
 		/* Not an arena map. */
 		IsArenaRandomizer = false;
@@ -128,6 +131,12 @@ public Action ArenaRandomizerReload(int client, int args)
 	{
 		return Plugin_Handled;
 	}
+}
+
+public Action ArenaRandomizerRunning(int client, int args)
+{
+	PrintToConsole(client, "[ArenaRandomizer] Is Running: %b", IsArenaRandomizer);
+	return Plugin_Handled;
 }
 
 void SendContentHint()
