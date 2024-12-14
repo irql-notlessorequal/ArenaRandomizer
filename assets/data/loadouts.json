@@ -1345,7 +1345,13 @@
 			}
 		],
 		"attributes": {
-			"round_start_audio": "hmmr/arena-randomizer/on_hit.mp3"
+			"round_start_audio": "hmmr/arena-randomizer/on_hit.mp3",
+			"round_end_audio": [
+				"hmmr/arena-randomizer/on_hit_re_buffed.mp3",
+				"hmmr/arena-randomizer/on_hit_re_fuck_you.mp3",
+				"hmmr/arena-randomizer/on_hit_re_nerfed.mp3",
+				"hmmr/arena-randomizer/on_hit_re_nerfed_multi.mp3"
+			]
 		},
 		"keep_weapons": true,
 		"special_round": true,

@@ -22,15 +22,18 @@
 #define MAP_DETECTION_MAP_CHOOSER_API 1
 
 /* Audio related. */
+#define ARENA_RANDOMIZER_ATTR_ROUND_START "round_start_audio"
+#define ARENA_RANDOMIZER_ATTR_ROUND_END "round_end_audio"
+
 #define ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH 3
 
 #define PRE_ROUND_AUDIO "hmmr/arena-randomizer/round_start.mp3"
 #define PRE_ROUND_AUDIO_FULL "sound/hmmr/arena-randomizer/round_start.mp3"
 
-#define SPECIAL_ROUND_AUDIO_BLEED "hmmr/arena-randomizer/on_hit.mp3"
-#define SPECIAL_ROUND_AUDIO_BLEED_FULL "sound/hmmr/arena-randomizer/on_hit.mp3"
-
 /* Misc. */
+#define ARENA_RANDOMIZER_ATTR "attributes"
+#define ARENA_RANDOMIZER_ATTR_PLAYER_HEALTH "hp"
+
 #define FILE_LOCATION "cfg/hmmr/arena-randomizer/loadouts.json"
 #define FILE_MAX_SIZE (1 * 1024 * 1024)
 

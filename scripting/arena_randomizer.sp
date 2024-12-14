@@ -19,10 +19,10 @@ static const char ARENA_RANDOMIZER_ROUND_START_SPECIAL[][] = {
 public Plugin myinfo = 
 {
 	name = "Arena Randomizer",
-	author = "CoolJosh3k, rake",
-	description = "An improved re-implementation of TF2TightRope's Project Ghost, adapted for hmmr.tf",
+	author = "IRQL_NOT_LESS_OR_EQUAL",
+	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
 	version = "1.0.0",
-	url = "https://hmmr.tf/open"
+	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
 /**
@@ -32,12 +32,13 @@ public Plugin myinfo =
 static int HasEnhancedMapDetectionSupport = MAP_DETECTION_UNAVAILABLE;
 static ArenaRandomizerSpecialRoundLogic SpecialRoundLogic = DISABLED;
 static bool IsArenaRandomizer = true;
+static ArrayList CustomAssets;
 
 Handle GameTextHandle = INVALID_HANDLE;
 Handle CON_VAR_ARENA_USE_QUEUE = INVALID_HANDLE;
 JSON_Array DATA;
 
-public bool InitJsonData()
+bool InitJsonData()
 {
 	int bufferSize = FileSize(FILE_LOCATION);
 
@@ -65,9 +66,161 @@ public bool InitJsonData()
 	return true;
 }
 
+/**
+ * Iterate over the JSON object, check for "attributes" and pre-load anything that we might need to serve soon.
+ */
+bool PreProcessJsonData()
+{
+	PrintToServer("[ArenaRandomizer] Pre-processing loadout, this might lag the server!");
+	
+	if (CustomAssets == null)
+	{
+		CustomAssets = new ArrayList();
+	}
+	else
+	{
+		CustomAssets.Clear();
+	}
+
+	for (int idx = 0; idx < DATA.Length; idx++)
+	{
+		JSON_Object loadout = DATA.GetObject(idx);
+
+		if (!JSON_CONTAINS_KEY(loadout, ARENA_RANDOMIZER_ATTR))
+		{
+			/* No pre-process required. */
+			continue;
+		}
+
+		JSON_Object attributes = loadout.GetObject(ARENA_RANDOMIZER_ATTR);
+
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_ROUND_START))
+		{
+			JSONCellType ct = attributes.GetType(ARENA_RANDOMIZER_ATTR_ROUND_START);
+
+			switch (ct)
+			{
+				case JSON_Type_String: {
+					int stringSize = attributes.GetSize(ARENA_RANDOMIZER_ATTR_ROUND_START);
+					char[] string = new char[stringSize];
+
+					if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_START, string, stringSize))
+					{
+						PrintToServer("[ArenaRandomizer::PreProcessJsonData] GetString() returned FALSE in 'round_start_audio' for index %i!", idx);
+						return false;
+					}
+
+					CustomAssets.Push(string);
+					break;
+				}
+
+				case JSON_Type_Object: {
+					JSON_Object round_start_obj = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_START);
+					if (!round_start_obj.IsArray)
+					{
+						PrintToServer("[ArenaRandomizer::PreProcessJsonData] IsArray returned FALSE in 'round_start_audio' for index %i!", idx);
+						return false;
+					}
+
+					JSON_Array array = view_as<JSON_Array>(round_start_obj);
+					for (int arr_idx = 0; arr_idx < array.Length; arr_idx++)
+					{
+						if (array.GetType(arr_idx) != JSON_Type_String)
+						{
+							PrintToServer("[ArenaRandomizer::PreProcessJsonData] Invalid contents in 'round_start_audio[]' for index %i!", idx);
+							return false;
+						}
+
+						char string2[PLATFORM_MAX_PATH];
+						if (!array.GetString(arr_idx, string2, PLATFORM_MAX_PATH))
+						{
+							PrintToServer("[ArenaRandomizer::PreProcessJsonData] GetString() returned FALSE in 'round_start_audio[]' for index %i!", idx);
+							return false;
+						}
+
+						CustomAssets.Push(string2);
+					}
+
+					break;
+				}
+
+				default: {
+					PrintToServer("[ArenaRandomizer::PreProcessJsonData] Invalid cell type %s for index %i!", ct, idx);
+					return false;
+				}
+			}
+		}
+
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_ROUND_END))
+		{
+			JSONCellType ct = attributes.GetType(ARENA_RANDOMIZER_ATTR_ROUND_END);
+
+			switch (ct)
+			{
+				case JSON_Type_String: {
+					int stringSize = attributes.GetSize(ARENA_RANDOMIZER_ATTR_ROUND_END);
+					char[] string = new char[stringSize];
+
+					if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_END, string, stringSize))
+					{
+						PrintToServer("[ArenaRandomizer::PreProcessJsonData] GetString() returned FALSE in 'round_end_audio' for index %i!", idx);
+						return false;
+					}
+
+					CustomAssets.Push(string);
+					break;
+				}
+
+				case JSON_Type_Object: {
+					JSON_Object round_start_obj = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_END);
+					if (!round_start_obj.IsArray)
+					{
+						PrintToServer("[ArenaRandomizer::PreProcessJsonData] IsArray returned FALSE in 'round_end_audio' for index %i!", idx);
+						return false;
+					}
+
+					JSON_Array array = view_as<JSON_Array>(round_start_obj);
+					for (int arr_idx = 0; arr_idx < array.Length; arr_idx++)
+					{
+						if (array.GetType(arr_idx) != JSON_Type_String)
+						{
+							PrintToServer("[ArenaRandomizer::PreProcessJsonData] Invalid contents in 'round_end_audio[]' for index %i!", idx);
+							return false;
+						}
+
+						char string2[PLATFORM_MAX_PATH];
+						if (!array.GetString(arr_idx, string2, PLATFORM_MAX_PATH))
+						{
+							PrintToServer("[ArenaRandomizer::PreProcessJsonData] GetString() returned FALSE in 'round_end_audio[]' for index %i!", idx);
+							return false;
+						}
+
+						CustomAssets.Push(string2);
+					}
+
+					break;
+				}
+
+				default: {
+					PrintToServer("[ArenaRandomizer::PreProcessJsonData] Invalid cell type %s for index %i!", ct, idx);
+					return false;
+				}
+			}
+		}
+	}
+
+	PrintToServer("[ArenaRandomizer] Pre-process complete.");
+	return true;
+}
+
 public void OnPluginStart()
 {
 	if (!InitJsonData())
+	{
+		return;
+	}
+
+	if (!PreProcessJsonData())
 	{
 		return;
 	}
@@ -122,12 +275,20 @@ public Action ArenaRandomizerReload(int client, int args)
 	delete DATA;
 	if (!InitJsonData())
 	{
-		SetFailState("Failed to reload loadout.");
+		SetFailState("Failed to reload loadout. (data init failed)");
 		return Plugin_Stop;
 	}
 	else
 	{
-		return Plugin_Handled;
+		if (!PreProcessJsonData())
+		{
+			SetFailState("Failed to reload loadout. (pre-process failed)");
+			return Plugin_Stop;
+		}
+		else
+		{
+			return Plugin_Handled;
+		}
 	}
 }
 
@@ -140,7 +301,6 @@ public Action ArenaRandomizerRunning(int client, int args)
 void SendContentHint()
 {
 	PrecacheSound(PRE_ROUND_AUDIO);
-	PrecacheSound(SPECIAL_ROUND_AUDIO_BLEED);
 
 	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
 	{
@@ -152,8 +312,43 @@ void SendContentHint()
 		PrecacheSound(ARENA_RANDOMIZER_ROUND_START_SPECIAL[idx]);
 	}
 
+	if (CustomAssets != null)
+	{
+		for (int idx = 0; idx < CustomAssets.Length; idx++)
+		{
+			char path[PLATFORM_MAX_PATH];
+
+			if (!CustomAssets.GetString(idx, path, PLATFORM_MAX_PATH))
+			{
+				PrintToServer("[ArenaRandomizer::SendContentHint] Failed to call PrecacheSound() for index %i!", idx);
+				continue;
+			}
+
+			PrecacheSound(path);
+		}
+	}
+
 	AddFileToDownloadsTable(PRE_ROUND_AUDIO_FULL);
-	AddFileToDownloadsTable(SPECIAL_ROUND_AUDIO_BLEED_FULL);
+
+	if (CustomAssets != null)
+	{
+		for (int idx = 0; idx < CustomAssets.Length; idx++)
+		{
+			char path[PLATFORM_MAX_PATH];
+
+			if (!CustomAssets.GetString(idx, path, PLATFORM_MAX_PATH))
+			{
+				PrintToServer("[ArenaRandomizer::SendContentHint] Failed to call AddFileToDownloadsTable() for index %i!", idx);
+				continue;
+			}
+
+			char real_path[PLATFORM_MAX_PATH + 6];
+			StrCat(real_path, sizeof(real_path), "sound/");
+			StrCat(real_path, sizeof(real_path), path);
+
+			AddFileToDownloadsTable(real_path);
+		}
+	}
 }
 
 int GetLoadoutIdx() {
@@ -726,13 +921,13 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 
 	bool CustomRoundStartMusic = false;
 
-	if (JSON_CONTAINS_KEY(entry, "attributes"))
+	if (JSON_CONTAINS_KEY(entry, ARENA_RANDOMIZER_ATTR))
 	{
-		JSON_Object attributes = entry.GetObject("attributes");
+		JSON_Object attributes = entry.GetObject(ARENA_RANDOMIZER_ATTR);
 
-		if (JSON_CONTAINS_KEY(attributes, "hp"))
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_PLAYER_HEALTH))
 		{
-			int health = attributes.GetInt("hp");
+			int health = attributes.GetInt(ARENA_RANDOMIZER_ATTR_PLAYER_HEALTH);
 
 			if (health == -1)
 			{
@@ -743,24 +938,43 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 			SetHealthForAll(health);
 		}
 
-		if (JSON_CONTAINS_KEY(attributes, "round_start_audio"))
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_ROUND_START))
 		{
-			char round_start_path[256];
+			JSON_Object roundStart = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_START);
 
-			if (!attributes.GetString("round_start_audio", round_start_path, 256))
+			char round_start_path[256];
+			if (roundStart != null && roundStart.IsArray)
 			{
-				PrintToServer("[WARNING] ArenaRound: Failed to read round_start_audio!");
+				JSON_Array roundStartArr = view_as<JSON_Array>(roundStart);
+
+				int roundStartIdx = GetRandomInt(0, roundStartArr.Length);
+				if (!roundStartArr.GetString(roundStartIdx, round_start_path, 256))
+				{
+					PrintToServer("[WARNING] ArenaRound: Failed to read round_start_audio!");
+				}
+				else
+				{
+					CustomRoundStartMusic = true;
+					EmitSoundToAll(round_start_path);
+				}
 			}
 			else
 			{
-				CustomRoundStartMusic = true;
-				EmitSoundToAll(round_start_path);
+				if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_START, round_start_path, 256))
+				{
+					PrintToServer("[WARNING] ArenaRound: Failed to read round_start_audio!");
+				}
+				else
+				{
+					CustomRoundStartMusic = true;
+					EmitSoundToAll(round_start_path);
+				}
 			}
 		}
 	}
 
-	bool IsSpecialRound = entry.GetBool("special_round", false);
-	
+	bool IsSpecialRound = entry.GetBool("special_round");
+
 	ShowTextPrompt(_name, IsSpecialRound ? SPECIAL_ROUND_UI_ICON : DEFAULT_UI_ICON, 12.0);
 
 	if (JSON_CONTAINS_KEY(entry, "special_round_code"))
