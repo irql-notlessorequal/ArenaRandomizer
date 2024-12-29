@@ -112,7 +112,7 @@ bool PreProcessJsonData()
 						return false;
 					}
 
-					CustomAssets.Push(string);
+					CustomAssets.PushString(string);
 					break;
 				}
 
@@ -140,7 +140,7 @@ bool PreProcessJsonData()
 							return false;
 						}
 
-						CustomAssets.Push(string2);
+						CustomAssets.PushString(string2);
 					}
 
 					break;
@@ -169,7 +169,7 @@ bool PreProcessJsonData()
 						return false;
 					}
 
-					CustomAssets.Push(string);
+					CustomAssets.PushString(string);
 					break;
 				}
 
@@ -197,7 +197,7 @@ bool PreProcessJsonData()
 							return false;
 						}
 
-						CustomAssets.Push(string2);
+						CustomAssets.PushString(string2);
 					}
 
 					break;
