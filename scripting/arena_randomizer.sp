@@ -103,10 +103,9 @@ bool PreProcessJsonData()
 			switch (ct)
 			{
 				case JSON_Type_String: {
-					int stringSize = attributes.GetSize(ARENA_RANDOMIZER_ATTR_ROUND_START);
-					char[] string = new char[stringSize];
+					char string[PLATFORM_MAX_PATH];
 
-					if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_START, string, stringSize))
+					if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_START, string, PLATFORM_MAX_PATH))
 					{
 						PrintToServer("[ArenaRandomizer::PreProcessJsonData] GetString() returned FALSE in 'round_start_audio' for index %i!", idx);
 						return false;
@@ -160,10 +159,9 @@ bool PreProcessJsonData()
 			switch (ct)
 			{
 				case JSON_Type_String: {
-					int stringSize = attributes.GetSize(ARENA_RANDOMIZER_ATTR_ROUND_END);
-					char[] string = new char[stringSize];
+					char string[PLATFORM_MAX_PATH];
 
-					if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_END, string, stringSize))
+					if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_END, string, PLATFORM_MAX_PATH))
 					{
 						PrintToServer("[ArenaRandomizer::PreProcessJsonData] GetString() returned FALSE in 'round_end_audio' for index %i!", idx);
 						return false;
