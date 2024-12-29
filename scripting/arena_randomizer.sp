@@ -302,18 +302,29 @@ public Action ArenaRandomizerRunning(int client, int args)
 	return Plugin_Handled;
 }
 
+#define DEBUG_1 1
+#if defined(DEBUG_1)
+void DummyPrecacheSound(const char[] audio)
+{
+	PrintToServer("[ArenaRandomizer::DEBUG] PrecacheSound(\"%s\")", audio);
+	PrecacheSound(audio);
+}
+#else
+#define DummyPrecacheSound PrecacheSound
+#endif
+
 void SendContentHint()
 {
-	PrecacheSound(PRE_ROUND_AUDIO);
+	DummyPrecacheSound(PRE_ROUND_AUDIO);
 
 	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
 	{
-		PrecacheSound(ARENA_RANDOMIZER_ROUND_START[idx]);
+		DummyPrecacheSound(ARENA_RANDOMIZER_ROUND_START[idx]);
 	}
 
 	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
 	{
-		PrecacheSound(ARENA_RANDOMIZER_ROUND_START_SPECIAL[idx]);
+		DummyPrecacheSound(ARENA_RANDOMIZER_ROUND_START_SPECIAL[idx]);
 	}
 
 	if (CustomAssets != null)
@@ -328,7 +339,7 @@ void SendContentHint()
 				continue;
 			}
 
-			PrecacheSound(path);
+			DummyPrecacheSound(path);
 		}
 	}
 
