@@ -1,5 +1,8 @@
 #include "arena_randomizer_utils.sp"
 
+/* SourcePawn is the special needs child of switch/break statements, make my life easier with this macro. */
+#define SP_BREAK
+
 #pragma semicolon 1
 #pragma newdecls required
 #pragma dynamic 65536
@@ -77,7 +80,7 @@ bool PreProcessJsonData()
 	
 	if (CustomAssets == null)
 	{
-		CustomAssets = new ArrayList();
+		CustomAssets = new ArrayList(.blocksize = ByteCountToCells(PLATFORM_MAX_PATH));
 	}
 	else
 	{
@@ -112,7 +115,8 @@ bool PreProcessJsonData()
 					}
 
 					CustomAssets.PushString(string);
-					break;
+
+					SP_BREAK
 				}
 
 				case JSON_Type_Object: {
@@ -124,6 +128,7 @@ bool PreProcessJsonData()
 					}
 
 					JSON_Array array = view_as<JSON_Array>(round_start_obj);
+
 					for (int arr_idx = 0; arr_idx < array.Length; arr_idx++)
 					{
 						if (array.GetType(arr_idx) != JSON_Type_String)
@@ -138,11 +143,11 @@ bool PreProcessJsonData()
 							PrintToServer("[ArenaRandomizer::PreProcessJsonData] GetString() returned FALSE in 'round_start_audio[]' for index %i!", idx);
 							return false;
 						}
-
+						
 						CustomAssets.PushString(string2);
 					}
 
-					break;
+					SP_BREAK
 				}
 
 				default: {
@@ -168,7 +173,8 @@ bool PreProcessJsonData()
 					}
 
 					CustomAssets.PushString(string);
-					break;
+
+					SP_BREAK
 				}
 
 				case JSON_Type_Object: {
@@ -198,7 +204,7 @@ bool PreProcessJsonData()
 						CustomAssets.PushString(string2);
 					}
 
-					break;
+					SP_BREAK
 				}
 
 				default: {
@@ -222,6 +228,7 @@ public void OnPluginStart()
 
 	if (!PreProcessJsonData())
 	{
+		SetFailState("PreProcessJsonData returned FALSE.");
 		return;
 	}
 
@@ -300,29 +307,18 @@ public Action ArenaRandomizerRunning(int client, int args)
 	return Plugin_Handled;
 }
 
-#define DEBUG_1 1
-#if defined(DEBUG_1)
-void DummyPrecacheSound(const char[] audio)
-{
-	PrintToServer("[ArenaRandomizer::DEBUG] PrecacheSound(\"%s\")", audio);
-	PrecacheSound(audio);
-}
-#else
-#define DummyPrecacheSound PrecacheSound
-#endif
-
 void SendContentHint()
 {
-	DummyPrecacheSound(PRE_ROUND_AUDIO);
+	PrecacheSound(PRE_ROUND_AUDIO);
 
 	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
 	{
-		DummyPrecacheSound(ARENA_RANDOMIZER_ROUND_START[idx]);
+		PrecacheSound(ARENA_RANDOMIZER_ROUND_START[idx]);
 	}
 
 	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
 	{
-		DummyPrecacheSound(ARENA_RANDOMIZER_ROUND_START_SPECIAL[idx]);
+		PrecacheSound(ARENA_RANDOMIZER_ROUND_START_SPECIAL[idx]);
 	}
 
 	if (CustomAssets != null)
@@ -337,7 +333,7 @@ void SendContentHint()
 				continue;
 			}
 
-			DummyPrecacheSound(path);
+			PrecacheSound(path);
 		}
 	}
 

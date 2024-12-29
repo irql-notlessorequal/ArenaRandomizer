@@ -8,6 +8,7 @@
 #include <tf2>
 #include <tf2_stocks>
 #include <sdkhooks>
+#include <adt_array>
 
 #include <json>
 #include <files>
