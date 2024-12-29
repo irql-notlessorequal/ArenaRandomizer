@@ -33,6 +33,8 @@ static int HasEnhancedMapDetectionSupport = MAP_DETECTION_UNAVAILABLE;
 static ArenaRandomizerSpecialRoundLogic SpecialRoundLogic = DISABLED;
 static bool IsArenaRandomizer = true;
 static ArrayList CustomAssets;
+/* i weep */
+static ArrayStack EndRoundAudioQueue;
 
 Handle GameTextHandle = INVALID_HANDLE;
 Handle CON_VAR_ARENA_USE_QUEUE = INVALID_HANDLE;
@@ -224,6 +226,8 @@ public void OnPluginStart()
 	{
 		return;
 	}
+
+	EndRoundAudioQueue = new ArrayStack(1);
 
 	if (HookEventEx("map_chooser_map_change", Event_MapChooser_MapLoaded, EventHookMode_PostNoCopy))
 	{
@@ -971,6 +975,38 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 				}
 			}
 		}
+
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_ROUND_END))
+		{
+			JSON_Object roundEnd = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_END);
+
+			char round_end_path[256];
+			if (roundEnd != null && roundEnd.IsArray)
+			{
+				JSON_Array roundEndArr = view_as<JSON_Array>(roundEnd);
+
+				int roundEndIdx = GetRandomInt(0, roundEndArr.Length);
+				if (!roundEndArr.GetString(roundEndIdx, round_end_path, 256))
+				{
+					PrintToServer("[WARNING] ArenaRound: Failed to read round_end_audio!");
+				}
+				else
+				{
+					EndRoundAudioQueue.PushString(round_end_path);
+				}
+			}
+			else
+			{
+				if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_END, round_end_path, 256))
+				{
+					PrintToServer("[WARNING] ArenaRound: Failed to read round_end_audio!");
+				}
+				else
+				{
+					EndRoundAudioQueue.PushString(round_end_path);
+				}
+			}
+		}
 	}
 
 	bool IsSpecialRound = entry.GetBool("special_round");
@@ -1013,7 +1049,16 @@ public void RoundEndAudio(Handle event, const char[] name, bool dontBroadcast)
 
 public Action PlayRoundEndClip(Handle timer)
 {
-	EmitSoundToAll(PRE_ROUND_AUDIO);
+	if (!EndRoundAudioQueue.Empty)
+	{
+		char str[PLATFORM_MAX_PATH];
+		EndRoundAudioQueue.PopString(str, PLATFORM_MAX_PATH);
+		EmitSoundToAll(str);
+	}
+	else
+	{
+		EmitSoundToAll(PRE_ROUND_AUDIO);
+	}
 
 	return Plugin_Stop;
 }
