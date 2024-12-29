@@ -711,7 +711,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 		char _class[10];
 		classes.GetString("all", _class, sizeof(_class));
 
-		TFClassType class = MalletConvertClassFromString(_class);
+		TFClassType class = view_as<TFClassType>(MalletConvertClassFromString(_class));
 		if (class == TFClass_Unknown) {
 			SetFailState("ArenaRound: Invalid formatted data object, requested an unknown class for ALL players.");
 			return;
@@ -725,14 +725,14 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 		char _blue[10];
 		classes.GetString("blue", _blue, sizeof(_blue));
 
-		TFClassType red = MalletConvertClassFromString(_red);
+		TFClassType red = view_as<TFClassType>(MalletConvertClassFromString(_red));
 
 		if (red == TFClass_Unknown) {
 			SetFailState("ArenaRound: Invalid formatted data object, requested an unknown class for RED players.");
 			return;
 		}
 
-		TFClassType blue = MalletConvertClassFromString(_blue);
+		TFClassType blue = view_as<TFClassType>(MalletConvertClassFromString(_blue));
 
 		if (blue == TFClass_Unknown) {
 			SetFailState("ArenaRound: Invalid formatted data object, requested an unknown class for BLU players.");
@@ -868,7 +868,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 						return;
 					}
 
-					TFTeam team = MalletConvertTeamFromString(_team);
+					TFTeam team = view_as<TFTeam>(MalletConvertTeamFromString(_team));
 
 					if (!GiveWeaponToTeamWithAttributes(team, weaponId, weaponName, 1, 0, slot, attributes))
 					{
@@ -896,7 +896,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 						return;
 					}
 
-					TFTeam team = MalletConvertTeamFromString(_team);
+					TFTeam team = view_as<TFTeam>(MalletConvertTeamFromString(_team));
 					if (!GiveWeaponToTeam(team, weaponId, weaponName, 1, 0, slot))
 					{
 						SetFailState("ArenaRound: GiveWeaponToTeam returned FALSE.");
@@ -1016,7 +1016,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 	if (JSON_CONTAINS_KEY(entry, "special_round_code"))
 	{
 		/* Not my problem(tm) if the user misconfigured the loadout JSON. */
-		SpecialRoundLogic = entry.GetInt("special_round_code", DISABLED);
+		SpecialRoundLogic = view_as<ArenaRandomizerSpecialRoundLogic>(entry.GetInt("special_round_code", DISABLED));
 	}
 	else
 	{
