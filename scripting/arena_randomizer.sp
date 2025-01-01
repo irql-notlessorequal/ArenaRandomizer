@@ -951,13 +951,13 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 		{
 			JSON_Object roundStart = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_START);
 
-			char round_start_path[256];
+			char round_start_path[PLATFORM_MAX_PATH];
 			if (roundStart != null && roundStart.IsArray)
 			{
 				JSON_Array roundStartArr = view_as<JSON_Array>(roundStart);
 
-				int roundStartIdx = GetRandomInt(0, roundStartArr.Length);
-				if (!roundStartArr.GetString(roundStartIdx, round_start_path, 256))
+				int roundStartIdx = GetRandomInt(0, roundStartArr.Length - 1);
+				if (!roundStartArr.GetString(roundStartIdx, round_start_path, PLATFORM_MAX_PATH))
 				{
 					PrintToServer("[WARNING] ArenaRound: Failed to read round_start_audio!");
 				}
@@ -969,7 +969,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 			}
 			else
 			{
-				if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_START, round_start_path, 256))
+				if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_START, round_start_path, PLATFORM_MAX_PATH))
 				{
 					PrintToServer("[WARNING] ArenaRound: Failed to read round_start_audio!");
 				}
@@ -985,13 +985,13 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 		{
 			JSON_Object roundEnd = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_END);
 
-			char round_end_path[256];
+			char round_end_path[PLATFORM_MAX_PATH];
 			if (roundEnd != null && roundEnd.IsArray)
 			{
 				JSON_Array roundEndArr = view_as<JSON_Array>(roundEnd);
 
-				int roundEndIdx = GetRandomInt(0, roundEndArr.Length);
-				if (!roundEndArr.GetString(roundEndIdx, round_end_path, 256))
+				int roundEndIdx = GetRandomInt(0, roundEndArr.Length - 1);
+				if (!roundEndArr.GetString(roundEndIdx, round_end_path, PLATFORM_MAX_PATH))
 				{
 					PrintToServer("[WARNING] ArenaRound: Failed to read round_end_audio!");
 				}
@@ -1002,7 +1002,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 			}
 			else
 			{
-				if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_END, round_end_path, 256))
+				if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_END, round_end_path, PLATFORM_MAX_PATH))
 				{
 					PrintToServer("[WARNING] ArenaRound: Failed to read round_end_audio!");
 				}
