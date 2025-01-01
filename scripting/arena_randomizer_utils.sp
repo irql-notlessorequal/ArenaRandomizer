@@ -18,6 +18,16 @@
 #if !defined(_ARENA_RANDOMIZER_DEFINE)
 #define _ARENA_RANDOMIZER_DEFINE 1
 
+/**
+ * Keep the current weapon that is equipped.
+ */
+#define ARENA_RANDOMIZER_WEAPON_KEEP -2
+/**
+ * Gives a player a random weapon that Mallet is aware of.
+ * (should be auto adjusted to appropriate class if necessary)
+ */
+#define ARENA_RANDOMIZER_WEAPON_RANDOM -1
+
 /* Map detection. */
 #define MAP_DETECTION_UNAVAILABLE 0
 #define MAP_DETECTION_MAP_CHOOSER_API 1

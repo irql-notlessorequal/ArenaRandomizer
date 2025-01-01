@@ -232,7 +232,7 @@ public void OnPluginStart()
 		return;
 	}
 
-	EndRoundAudioQueue = new ArrayStack(1);
+	EndRoundAudioQueue = new ArrayStack(.blocksize = ByteCountToCells(PLATFORM_MAX_PATH));
 
 	if (HookEventEx("map_chooser_map_change", Event_MapChooser_MapLoaded, EventHookMode_PostNoCopy))
 	{
@@ -807,13 +807,13 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 				return;
 			}
 
-			if (weaponId == -1)
+			if (weaponId == ARENA_RANDOMIZER_WEAPON_RANDOM)
 			{
-				/* TODO */
+				weaponId = GetRandomWeapon();
 			}
 			
 			/* TODO: Simplify this since we can safely pass NULL for 'attributes' */
-			if (weaponId == -2)
+			if (weaponId == ARENA_RANDOMIZER_WEAPON_KEEP)
 			{
 				/* Special value: Apply to current weapons. */
 
