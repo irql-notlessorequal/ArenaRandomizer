@@ -24,7 +24,7 @@ public Plugin myinfo =
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "1.0.0",
+	version = "0.0.34",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -496,7 +496,7 @@ public void SetWeaponAmmo(int client, int slot1, int slot2)
     }
 }
 
-bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool deleteAttribs, bool printAttribs)
+bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool printAttribs)
 {
 	if (attributes == null)
 	{
@@ -507,16 +507,6 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool d
 	{
 		/* Applying attributes to a wearable causes crashes, apply it to the player instead. */
 		weapon = GetEntPropEnt(weapon, Prop_Data, "m_hOwnerEntity");
-	}
-
-	/* Make sure we are clearing the attribute of the weapon not the wearable. */
-	if (deleteAttribs)
-	{
-		if (MalletDeleteAllAttributes(weapon) == -1)
-		{
-			PrintToServer("ApplyWeaponAttributes: DeleteAllAttributes() returned -1.");
-			return false;
-		}
 	}
 
 	for (int idx = 0; idx < attributes.Length; idx++)
@@ -593,7 +583,7 @@ public bool GiveWeaponToAllWithAttributes(int weaponId, const char[] weaponName,
 				return false;
 			}
 
-			if (!ApplyWeaponAttributes(weaponEntity, i, attributes, false, false))
+			if (!ApplyWeaponAttributes(weaponEntity, i, attributes, false))
 			{
 				return false;
 			}
@@ -623,7 +613,7 @@ public bool GiveWeaponToTeamWithAttributes(TFTeam team, int weaponId, const char
 					return false;
 				}
 
-				if (!ApplyWeaponAttributes(weaponEntity, i, attributes, false, false))
+				if (!ApplyWeaponAttributes(weaponEntity, i, attributes, false))
 				{
 					return false;
 				}
@@ -712,23 +702,37 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 
 	JSON_Object classes = entry.GetObject("classes");
 
-	if (JSON_CONTAINS_KEY(classes, "all")) {
+	if (JSON_CONTAINS_KEY(classes, ARENA_RANDOMIZER_CLASS_ALL)) {
 		char _class[10];
-		classes.GetString("all", _class, sizeof(_class));
+		classes.GetString(ARENA_RANDOMIZER_CLASS_ALL, _class, sizeof(_class));
 
-		TFClassType class = view_as<TFClassType>(MalletConvertClassFromString(_class));
-		if (class == TFClass_Unknown) {
-			SetFailState("ArenaRound: Invalid formatted data object, requested an unknown class for ALL players.");
-			return;
-		} else {
-			SetAllPlayersClass(class);
+		if (strcmp(_class, ARENA_RANDOMIZER_CLASS_RANDOM))
+		{
+			SetAllPlayersRandomClass();
 		}
-	} else if (JSON_CONTAINS_KEY(classes, "red") && JSON_CONTAINS_KEY(classes, "blue"))  {
+		else if (strcmp(_class, ARENA_RANDOMIZER_CLASS_RANDOM_SHARED))
+		{
+			SetAllPlayersSharedRandomClass();
+		}
+		else
+		{
+			TFClassType class = view_as<TFClassType>(MalletConvertClassFromString(_class));
+			if (class == TFClass_Unknown)
+			{
+				SetFailState("ArenaRound: Invalid formatted data object, requested an unknown class for ALL players.");
+				return;
+			}
+			else
+			{
+				SetAllPlayersClass(class);
+			}
+		}
+	} else if (JSON_CONTAINS_KEY(classes, ARENA_RANDOMIZER_CLASS_RED) && JSON_CONTAINS_KEY(classes, ARENA_RANDOMIZER_CLASS_BLUE))  {
 		char _red[10];
-		classes.GetString("red", _red, sizeof(_red));
+		classes.GetString(ARENA_RANDOMIZER_CLASS_RED, _red, sizeof(_red));
 
 		char _blue[10];
-		classes.GetString("blue", _blue, sizeof(_blue));
+		classes.GetString(ARENA_RANDOMIZER_CLASS_BLUE, _blue, sizeof(_blue));
 
 		TFClassType red = view_as<TFClassType>(MalletConvertClassFromString(_red));
 
@@ -746,7 +750,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 
 		SetAllPlayersTeam(red, TFTeam_Red);
 		SetAllPlayersTeam(blue, TFTeam_Blue);
-	} else if (JSON_CONTAINS_KEY(classes, "keep")) {
+	} else if (JSON_CONTAINS_KEY(classes, ARENA_RANDOMIZER_CLASS_KEEP)) {
 		/* No action required. */
 	} else {
 		SetFailState("ArenaRound: Invalid formatted data object, 'classes' is misconfigured.");
@@ -841,7 +845,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 								PrintToConsole(client, "slot %i: ", weaponSlot);
 							}
 
-							if (!ApplyWeaponAttributes(weaponEntity, client, attributes, true, print_weapon_attribs))
+							if (!ApplyWeaponAttributes(weaponEntity, client, attributes, print_weapon_attribs))
 							{
 								SetFailState("ArenaRound: ApplyWeaponAttributes() returned FALSE.");
 								return;
@@ -1016,7 +1020,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 
 	bool IsSpecialRound = entry.GetBool("special_round");
 
-	ShowTextPrompt(_name, IsSpecialRound ? SPECIAL_ROUND_UI_ICON : DEFAULT_UI_ICON, 12.0);
+	ShowTextPrompt(_name, IsSpecialRound ? SPECIAL_ROUND_UI_ICON : DEFAULT_UI_ICON, 14.92);
 
 	if (JSON_CONTAINS_KEY(entry, "special_round_code"))
 	{
@@ -1049,7 +1053,35 @@ public void RoundEndAudio(Handle event, const char[] name, bool dontBroadcast)
 	if (!IsArenaRandomizer)
 		return;
 
+	/* Reset all attributes now, so anything won't explode next round. */
+	CreateTimer(10.00, ResetAllAttributes, _);
+
 	CreateTimer(14.92, PlayRoundEndClip, _);
+}
+
+public Action ResetAllAttributes(Handle timer)
+{
+	for (int client = 0; client < MaxClients; client++)
+	{
+		if (!IsClientInGame(client))
+		{
+			continue;
+		}
+
+		for (int slot = 0; slot < 8; slot++)
+		{
+			int entity = GetPlayerWeaponSlot(client, slot);
+
+			if (entity == -1)
+			{
+				continue;
+			}
+
+			MalletDeleteAllAttributes(entity);
+		}
+	}
+
+	return Plugin_Stop;
 }
 
 public Action PlayRoundEndClip(Handle timer)

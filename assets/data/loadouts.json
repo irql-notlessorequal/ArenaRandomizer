@@ -1317,6 +1317,32 @@
 	},
 	{
 		"classes": {
+			"all": "random"
+		},
+		"weapons": [
+			{
+				"id": -2,
+				"name": "dummy",
+				"slot": "any",
+
+				"attributes": [
+					{
+						"id": 150,
+						"name": "set_turn_to_gold",
+						"value": 1
+					}
+				]
+			}
+		],
+		"attributes": {
+			"round_start_audio": "sound/vo/engineer_goldenwrenchkill02.mp3"
+		},
+		"keep_weapons": true,
+		"special_round": true,
+		"name": "The Midas Touch"
+	},
+	{
+		"classes": {
 			"keep": true
 		},
 		"weapons": [

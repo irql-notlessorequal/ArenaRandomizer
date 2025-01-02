@@ -28,6 +28,22 @@
  */
 #define ARENA_RANDOMIZER_WEAPON_RANDOM -1
 
+#define ARENA_RANDOMIZER_CLASS_ALL "all"
+#define ARENA_RANDOMIZER_CLASS_RED "red"
+#define ARENA_RANDOMIZER_CLASS_BLUE "blue"
+/**
+ * Keeps the class that is currently set on the player.
+ */
+#define ARENA_RANDOMIZER_CLASS_KEEP "keep"
+/**
+ * Picks a random class for each player.
+ */
+#define ARENA_RANDOMIZER_CLASS_RANDOM "random"
+/**
+ * Picks a random class and sets it for ALL players.
+ */
+#define ARENA_RANDOMIZER_CLASS_RANDOM_SHARED "random-shared"
+
 /* Map detection. */
 #define MAP_DETECTION_UNAVAILABLE 0
 #define MAP_DETECTION_MAP_CHOOSER_API 1
@@ -127,6 +143,34 @@ void SetHealthForAll(int health)
 	}
 }
 
+void SetAllPlayersRandomClass()
+{
+	for (int i = 1; i < MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
+			TFClassType class = view_as<TFClassType>(GetRandomInt(0, 8));
+
+			TF2_SetPlayerClass(i, class);
+			TF2_RegeneratePlayer(i);
+		}
+	}
+}
+
+void SetAllPlayersSharedRandomClass()
+{
+	TFClassType class = view_as<TFClassType>(GetRandomInt(0, 8));
+
+	for (int i = 1; i < MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
+			TF2_SetPlayerClass(i, class);
+			TF2_RegeneratePlayer(i);
+		}
+	}
+}
+
 void SetAllPlayersClass(TFClassType class)
 {
 	for (int i = 1; i < MaxClients; i++)
@@ -134,6 +178,7 @@ void SetAllPlayersClass(TFClassType class)
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
 			TF2_SetPlayerClass(i, class);
+			TF2_RegeneratePlayer(i);
 		}
 	}
 }
@@ -147,6 +192,7 @@ void SetAllPlayersTeam(TFClassType class, TFTeam team)
 			if (TF2_GetClientTeam(i) == team)
 			{
 				TF2_SetPlayerClass(i, class);
+				TF2_RegeneratePlayer(i);
 			}
 		}
 	}
