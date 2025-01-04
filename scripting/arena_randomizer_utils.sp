@@ -151,7 +151,14 @@ void SetAllPlayersRandomClass()
 		{
 			TFClassType class = view_as<TFClassType>(GetRandomInt(0, 8));
 
-			TF2_SetPlayerClass(i, class);
+			TF2_SetPlayerClass(.client = i, .classType = class, .persistent = false);
+		}
+	}
+
+	for (int i = 1; i < MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
 			TF2_RegeneratePlayer(i);
 		}
 	}
@@ -165,7 +172,14 @@ void SetAllPlayersSharedRandomClass()
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
-			TF2_SetPlayerClass(i, class);
+			TF2_SetPlayerClass(.client = i, .classType = class, .persistent = false);
+		}
+	}
+
+	for (int i = 1; i < MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
 			TF2_RegeneratePlayer(i);
 		}
 	}
@@ -177,7 +191,14 @@ void SetAllPlayersClass(TFClassType class)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
-			TF2_SetPlayerClass(i, class);
+			TF2_SetPlayerClass(.client = i, .classType = class, .persistent = false);
+		}
+	}
+
+	for (int i = 1; i < MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
 			TF2_RegeneratePlayer(i);
 		}
 	}
@@ -191,9 +212,16 @@ void SetAllPlayersTeam(TFClassType class, TFTeam team)
 		{
 			if (TF2_GetClientTeam(i) == team)
 			{
-				TF2_SetPlayerClass(i, class);
-				TF2_RegeneratePlayer(i);
+				TF2_SetPlayerClass(.client = i, .classType = class, .persistent = false);
 			}
+		}
+	}
+
+	for (int i = 1; i < MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
+			TF2_RegeneratePlayer(i);
 		}
 	}
 }
