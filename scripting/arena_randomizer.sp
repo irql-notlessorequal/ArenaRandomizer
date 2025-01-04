@@ -706,11 +706,11 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 		char _class[10];
 		classes.GetString(ARENA_RANDOMIZER_CLASS_ALL, _class, sizeof(_class));
 
-		if (strcmp(_class, ARENA_RANDOMIZER_CLASS_RANDOM))
+		if (strcmp(_class, ARENA_RANDOMIZER_CLASS_RANDOM) == 0)
 		{
 			SetAllPlayersRandomClass();
 		}
-		else if (strcmp(_class, ARENA_RANDOMIZER_CLASS_RANDOM_SHARED))
+		else if (strcmp(_class, ARENA_RANDOMIZER_CLASS_RANDOM_SHARED) == 0)
 		{
 			SetAllPlayersSharedRandomClass();
 		}
