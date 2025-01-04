@@ -1343,7 +1343,7 @@
 	},
 	{
 		"classes": {
-			"keep": true
+			"all": "random-shared"
 		},
 		"weapons": [
 			{
@@ -1427,7 +1427,7 @@
 	},
 	{
 		"classes": {
-			"keep": true
+			"all": "random"
 		},
 		"weapons": [
 			{
