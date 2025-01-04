@@ -703,7 +703,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 	JSON_Object classes = entry.GetObject("classes");
 
 	if (JSON_CONTAINS_KEY(classes, ARENA_RANDOMIZER_CLASS_ALL)) {
-		char _class[10];
+		char _class[16];
 		classes.GetString(ARENA_RANDOMIZER_CLASS_ALL, _class, sizeof(_class));
 
 		if (strcmp(_class, ARENA_RANDOMIZER_CLASS_RANDOM) == 0)

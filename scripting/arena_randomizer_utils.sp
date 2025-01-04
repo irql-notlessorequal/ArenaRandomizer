@@ -155,6 +155,7 @@ void SetAllPlayersRandomClass()
 		}
 	}
 
+	/* We need to loop again otherwise we regenerate too quickly and break players. */
 	for (int i = 1; i < MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
@@ -176,6 +177,7 @@ void SetAllPlayersSharedRandomClass()
 		}
 	}
 
+	/* We need to loop again otherwise we regenerate too quickly and break players. */
 	for (int i = 1; i < MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
@@ -195,6 +197,7 @@ void SetAllPlayersClass(TFClassType class)
 		}
 	}
 
+	/* We need to loop again otherwise we regenerate too quickly and break players. */
 	for (int i = 1; i < MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
@@ -217,6 +220,7 @@ void SetAllPlayersTeam(TFClassType class, TFTeam team)
 		}
 	}
 
+	/* We need to loop again otherwise we regenerate too quickly and break players. */
 	for (int i = 1; i < MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
