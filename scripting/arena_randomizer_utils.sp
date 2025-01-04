@@ -51,6 +51,7 @@
 /* Audio related. */
 #define ARENA_RANDOMIZER_ATTR_ROUND_START "round_start_audio"
 #define ARENA_RANDOMIZER_ATTR_ROUND_END "round_end_audio"
+#define ARENA_RANDOMIZER_ATTR_ON_KILL "kill_audio"
 
 #define ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH 3
 
@@ -66,6 +67,8 @@
 
 #define DEFAULT_UI_ICON "leaderboard_dominated"
 #define SPECIAL_ROUND_UI_ICON "leaderboard_streak"
+
+#define DAMAGE_CUSTOM_TYPE_BLEED 34
 #endif
 
 enum ArenaRandomizerSpecialRoundLogic 
@@ -114,22 +117,7 @@ int GetRandomWeapon()
 
 int GetRandomAttributeID()
 {
-	int candidate;
-	do
-	{
-		/* There are more attributes but I can't be bothered to take a gap into account. */
-		candidate = GetRandomInt(1, 881);
-
-		/* These will crash players, re-roll instead. */
-		if (candidate >= 554 && candidate <= 609)
-		{
-			continue;
-		}
-
-		break;
-	} while (true);
-
-	return candidate;
+	return MalletGetRandomAttribute(true);
 }
 
 void SetHealthForAll(int health)

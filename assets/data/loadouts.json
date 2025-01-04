@@ -1317,6 +1317,45 @@
 	},
 	{
 		"classes": {
+			"all": "demoman"
+		},
+		"weapons": [
+			{
+				"id": 1099,
+				"name": "tf_wearable_demoshield",
+				"slot": "secondary",
+				
+				"attributes": [
+					{
+						"id": 248,
+						"name": "charge_impact_damage",
+						"value": 2
+					},
+					{
+						"id": 249,
+						"name": "charge_recharge_rate",
+						"value": 1
+					}
+				]
+			},
+			{
+				"id": 609,
+				"name": "tf_weapon_bottle",
+				"slot": "melee",
+
+				"attributes": [
+					{
+						"id": 1,
+						"name": "mult_dmg",
+						"value": 0
+					}
+				]
+			}
+		],
+		"name": "Demo Train"
+	},
+	{
+		"classes": {
 			"all": "random"
 		},
 		"weapons": [
@@ -1349,30 +1388,12 @@
 			{
 				"id": -2,
 				"name": "dummy",
-				"slot": "any",
-
-				"attributes": [
-					{
-						"id": 1,
-						"name": "mult_dmg",
-						"value": 0.01
-					},
-					{
-						"id": 15,
-						"name": "mult_crit_chance",
-						"value": 0.0
-					},
-					{
-						"id": 149,
-						"name": "bleeding_duration",
-						"value": 8
-					}
-				]
+				"slot": "any"
 			}
 		],
 		"attributes": {
 			"round_start_audio": "hmmr/arena-randomizer/on_hit.mp3",
-			"round_end_audio": [
+			"kill_audio": [
 				"hmmr/arena-randomizer/on_hit_re_buffed.mp3",
 				"hmmr/arena-randomizer/on_hit_re_fuck_you.mp3",
 				"hmmr/arena-randomizer/on_hit_re_nerfed.mp3",

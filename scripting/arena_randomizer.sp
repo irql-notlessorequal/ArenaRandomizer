@@ -24,7 +24,7 @@ public Plugin myinfo =
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "0.0.34",
+	version = "0.0.36",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -38,6 +38,7 @@ static bool IsArenaRandomizer = true;
 static ArrayList CustomAssets;
 /* i weep */
 static ArrayStack EndRoundAudioQueue;
+static ArrayList OnKillAudioList;
 
 Handle GameTextHandle = INVALID_HANDLE;
 Handle CON_VAR_ARENA_USE_QUEUE = INVALID_HANDLE;
@@ -105,7 +106,8 @@ bool PreProcessJsonData()
 
 			switch (ct)
 			{
-				case JSON_Type_String: {
+				case JSON_Type_String:
+				{
 					char string[PLATFORM_MAX_PATH];
 
 					if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_START, string, PLATFORM_MAX_PATH))
@@ -119,7 +121,8 @@ bool PreProcessJsonData()
 					SP_BREAK
 				}
 
-				case JSON_Type_Object: {
+				case JSON_Type_Object:
+				{
 					JSON_Object round_start_obj = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_START);
 					if (!round_start_obj.IsArray)
 					{
@@ -150,7 +153,8 @@ bool PreProcessJsonData()
 					SP_BREAK
 				}
 
-				default: {
+				default:
+				{
 					PrintToServer("[ArenaRandomizer::PreProcessJsonData] Invalid cell type %s for index %i!", ct, idx);
 					return false;
 				}
@@ -163,7 +167,8 @@ bool PreProcessJsonData()
 
 			switch (ct)
 			{
-				case JSON_Type_String: {
+				case JSON_Type_String:
+				{
 					char string[PLATFORM_MAX_PATH];
 
 					if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ROUND_END, string, PLATFORM_MAX_PATH))
@@ -177,15 +182,16 @@ bool PreProcessJsonData()
 					SP_BREAK
 				}
 
-				case JSON_Type_Object: {
-					JSON_Object round_start_obj = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_END);
-					if (!round_start_obj.IsArray)
+				case JSON_Type_Object:
+				{
+					JSON_Object round_end_obj = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_END);
+					if (!round_end_obj.IsArray)
 					{
 						PrintToServer("[ArenaRandomizer::PreProcessJsonData] IsArray returned FALSE in 'round_end_audio' for index %i!", idx);
 						return false;
 					}
 
-					JSON_Array array = view_as<JSON_Array>(round_start_obj);
+					JSON_Array array = view_as<JSON_Array>(round_end_obj);
 					for (int arr_idx = 0; arr_idx < array.Length; arr_idx++)
 					{
 						if (array.GetType(arr_idx) != JSON_Type_String)
@@ -207,7 +213,68 @@ bool PreProcessJsonData()
 					SP_BREAK
 				}
 
-				default: {
+				default:
+				{
+					PrintToServer("[ArenaRandomizer::PreProcessJsonData] Invalid cell type %s for index %i!", ct, idx);
+					return false;
+				}
+			}
+		}
+
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_ON_KILL))
+		{
+			JSONCellType ct = attributes.GetType(ARENA_RANDOMIZER_ATTR_ON_KILL);
+
+			switch (ct)
+			{
+				case JSON_Type_String:
+				{
+					char string[PLATFORM_MAX_PATH];
+
+					if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ON_KILL, string, PLATFORM_MAX_PATH))
+					{
+						PrintToServer("[ArenaRandomizer::PreProcessJsonData] GetString() returned FALSE in 'kill_audio' for index %i!", idx);
+						return false;
+					}
+
+					CustomAssets.PushString(string);
+
+					SP_BREAK
+				}
+
+				case JSON_Type_Object:
+				{
+					JSON_Object on_kill_obj = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ON_KILL);
+					if (!on_kill_obj.IsArray)
+					{
+						PrintToServer("[ArenaRandomizer::PreProcessJsonData] IsArray returned FALSE in 'kill_audio' for index %i!", idx);
+						return false;
+					}
+
+					JSON_Array array = view_as<JSON_Array>(on_kill_obj);
+					for (int arr_idx = 0; arr_idx < array.Length; arr_idx++)
+					{
+						if (array.GetType(arr_idx) != JSON_Type_String)
+						{
+							PrintToServer("[ArenaRandomizer::PreProcessJsonData] Invalid contents in 'kill_audio[]' for index %i!", idx);
+							return false;
+						}
+
+						char string2[PLATFORM_MAX_PATH];
+						if (!array.GetString(arr_idx, string2, PLATFORM_MAX_PATH))
+						{
+							PrintToServer("[ArenaRandomizer::PreProcessJsonData] GetString() returned FALSE in 'kill_audio[]' for index %i!", idx);
+							return false;
+						}
+
+						CustomAssets.PushString(string2);
+					}
+
+					SP_BREAK
+				}
+
+				default:
+				{
 					PrintToServer("[ArenaRandomizer::PreProcessJsonData] Invalid cell type %s for index %i!", ct, idx);
 					return false;
 				}
@@ -233,6 +300,7 @@ public void OnPluginStart()
 	}
 
 	EndRoundAudioQueue = new ArrayStack(.blocksize = ByteCountToCells(PLATFORM_MAX_PATH));
+	OnKillAudioList = new ArrayList(.blocksize = ByteCountToCells(PLATFORM_MAX_PATH));
 
 	if (HookEventEx("map_chooser_map_change", Event_MapChooser_MapLoaded, EventHookMode_PostNoCopy))
 	{
@@ -244,6 +312,7 @@ public void OnPluginStart()
 
 	HookEvent("arena_round_start", ArenaRound, EventHookMode_PostNoCopy);
 	HookEvent("arena_win_panel", RoundEndAudio, EventHookMode_PostNoCopy);
+	HookEvent("player_death", PlayerDeath, EventHookMode_PostNoCopy);
 
 	CON_VAR_ARENA_USE_QUEUE = FindConVar("tf_arena_use_queue");
 	if (CON_VAR_ARENA_USE_QUEUE == INVALID_HANDLE)
@@ -253,6 +322,11 @@ public void OnPluginStart()
 	}
 
 	SetConVarInt(CON_VAR_ARENA_USE_QUEUE, 0);
+}
+
+public void OnClientPutInServer(int client)
+{
+	SDKHook(client, SDKHook_OnTakeDamageAlive, OnTakeDamageAlive);
 }
 
 public void OnMapInit(const char[] mapName)
@@ -370,7 +444,7 @@ int GetLoadoutIdx() {
 	static int previous_roll = -1;
 
 	int roll;
-	do
+	for (;;)
 	{
 		/* Prevent rolling the same fucking thing. */
 		roll = GetRandomInt(0, DATA.Length - 1);
@@ -382,7 +456,7 @@ int GetLoadoutIdx() {
 
 		previous_roll = roll;
 		break;
-	} while (true);
+	}
 
 	return roll;
 }
@@ -459,7 +533,7 @@ public void RemoveAllWeapons(int clientIdx)
 
 public void RemoveAllWeaponsAll()
 {
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -470,7 +544,7 @@ public void RemoveAllWeaponsAll()
 }
 
 public void SetWeaponAmmoAll(int slot1, int slot2) {
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -572,7 +646,7 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool p
 
 public bool GiveWeaponToAllWithAttributes(int weaponId, const char[] weaponName, int level, int quality, int weaponSlot, JSON_Array attributes)
 {
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -600,7 +674,7 @@ public bool GiveWeaponToAllWithAttributes(int weaponId, const char[] weaponName,
 
 public bool GiveWeaponToTeamWithAttributes(TFTeam team, int weaponId, const char[] weaponName, int level, int quality, int weaponSlot, JSON_Array attributes)
 {
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -632,7 +706,7 @@ public bool GiveWeaponToTeamWithAttributes(TFTeam team, int weaponId, const char
 
 public bool GiveWeaponToAll(int weaponId, const char[] weaponName, int level, int quality, int weaponSlot)
 {
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -655,7 +729,7 @@ public bool GiveWeaponToAll(int weaponId, const char[] weaponName, int level, in
 
 public bool GiveWeaponToTeam(TFTeam team, int weaponId, const char[] weaponName, int level, int quality, int weaponSlot)
 {
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -825,7 +899,7 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 				{
 					JSON_Array attributes = view_as<JSON_Array>(weapon.GetObject("attributes"));
 
-					for (int client = 1; client < MaxClients; client++)
+					for (int client = 1; client <= MaxClients; client++)
 					{
 						if (!IsClientInGame(client) || !IsPlayerAlive(client))
 						{
@@ -1016,6 +1090,39 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 				}
 			}
 		}
+
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_ON_KILL))
+		{
+			JSON_Object onKill = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ON_KILL);
+
+			char on_kill_path[PLATFORM_MAX_PATH];
+			if (onKill != null && onKill.IsArray)
+			{
+				JSON_Array onKillArr = view_as<JSON_Array>(onKill);
+
+				for (int killIdx = 0; killIdx < onKillArr.Length; killIdx++)
+				{
+					if (!onKillArr.GetString(killIdx, on_kill_path, PLATFORM_MAX_PATH))
+					{
+						PrintToServer("[WARNING] ArenaRound: Failed to read kill_audio at index %i!", killIdx);
+						continue;
+					}
+
+					OnKillAudioList.PushString(on_kill_path);
+				}
+			}
+			else
+			{
+				if (!attributes.GetString(ARENA_RANDOMIZER_ATTR_ON_KILL, on_kill_path, PLATFORM_MAX_PATH))
+				{
+					PrintToServer("[WARNING] ArenaRound: Failed to read kill_audio!");
+				}
+				else
+				{
+					OnKillAudioList.PushString(on_kill_path);
+				}
+			}			
+		}
 	}
 
 	bool IsSpecialRound = entry.GetBool("special_round");
@@ -1057,11 +1164,14 @@ public void RoundEndAudio(Handle event, const char[] name, bool dontBroadcast)
 	CreateTimer(10.00, ResetAllAttributes, _);
 
 	CreateTimer(14.92, PlayRoundEndClip, _);
+
+	/* Clear the kill audio queue. */
+	OnKillAudioList.Clear();
 }
 
 public Action ResetAllAttributes(Handle timer)
 {
-	for (int client = 0; client < MaxClients; client++)
+	for (int client = 1; client <= MaxClients; client++)
 	{
 		if (!IsClientInGame(client))
 		{
@@ -1100,6 +1210,47 @@ public Action PlayRoundEndClip(Handle timer)
 	return Plugin_Stop;
 }
 
+public Action PlayerDeath(Event event, const char[] name, bool dontBroadcast)
+{
+	if (!IsArenaRandomizer)
+	{
+		return Plugin_Continue;
+	}
+
+	if (OnKillAudioList.Length == 0)
+	{
+		return Plugin_Continue;
+	}
+
+	int idx = GetRandomInt(0, OnKillAudioList.Length - 1);
+	char path[PLATFORM_MAX_PATH];
+
+	if (!OnKillAudioList.GetString(idx, path, PLATFORM_MAX_PATH))
+	{
+		return Plugin_Continue;
+	}
+
+	if (SpecialRoundLogic == BLEED_FOR_EIGHT_SECONDS)
+	{
+		/* Place the funnies at the point of death. */
+		float position[3];
+
+		int entity = event.GetInt("inflictor_entindex");
+		if (entity)
+		{
+			GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
+		}
+
+		EmitSoundToAll(.sample = path, .entity = SOUND_FROM_WORLD, .origin = position);
+	}
+	else
+	{
+		EmitSoundToAll(path);
+	}
+	
+	return Plugin_Continue;
+}
+
 public Action Event_MapChooser_MapLoaded(Event event, const char[] name, bool dontBroadcast)
 {
 	char gamemode[64];
@@ -1107,6 +1258,32 @@ public Action Event_MapChooser_MapLoaded(Event event, const char[] name, bool do
 
 	IsArenaRandomizer = strcmp(gamemode, "Arena Randomizer") == 0;
 	return Plugin_Continue;
+}
+
+public Action OnTakeDamageAlive(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon,
+		float damageForce[3], float damagePosition[3], int damagecustom)
+{
+	if (!IsArenaRandomizer)
+	{
+		return Plugin_Continue;
+	}
+
+	if (SpecialRoundLogic != BLEED_FOR_EIGHT_SECONDS)
+	{
+		return Plugin_Continue;
+	}
+
+	/* TODO(rake): Allow fall damage and trigger_death as well. */
+
+	/* Only allow bleed to be issued. */
+	if (damagecustom == DAMAGE_CUSTOM_TYPE_BLEED)
+	{
+		return Plugin_Continue;
+	}
+
+	damage = 0.0;
+	TF2_MakeBleed(victim, attacker, 8.0);
+	return Plugin_Changed;
 }
 
 public void TF2_OnConditionAdded(int client, TFCond condition)

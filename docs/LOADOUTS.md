@@ -8,14 +8,14 @@ The `loadouts.json` contains all the loadout rounds in Arena Randomizer.
 {
 	"name": [string] (mandatory)
 	"keep_weapons": [boolean] (optional)
-	"classes": { (mandatory)
+	"classes": { (optional)
 		/* One of the following MUST be present. */
 		"all": [string]
 		"blue": [string]
 		"red": [string]
 		"keep": [boolean]
 	},
-	"weapons": [ (mandatory)
+	"weapons": [ (optional)
 		{
 			"id": [integer] (mandatory)
 			"name": [string] (mandatory)
@@ -38,6 +38,7 @@ The `loadouts.json` contains all the loadout rounds in Arena Randomizer.
 	"attributes": { (optional)
 		"round_start_audio": [array/string] (optional)
 		"round_end_audio": [array/string] (optional)
+		"on_kill": [array/string] (optional)
 		"hp": [integer] (optional)
 	},
 	"special_round": [boolean] (optional)
