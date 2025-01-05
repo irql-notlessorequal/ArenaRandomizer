@@ -133,6 +133,20 @@ void SetHealthForAll(int health)
 	}
 }
 
+Action InternalRegeneratePlayers(Handle timer)
+{
+	/* We need to loop again otherwise we regenerate too quickly and break players. */
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
+			TF2_RegeneratePlayer(i);
+		}
+	}
+
+	return Plugin_Stop;
+}
+
 void SetAllPlayersRandomClass()
 {
 	for (int i = 1; i <= MaxClients; i++)
@@ -145,14 +159,7 @@ void SetAllPlayersRandomClass()
 		}
 	}
 
-	/* We need to loop again otherwise we regenerate too quickly and break players. */
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			TF2_RegeneratePlayer(i);
-		}
-	}
+	CreateTimer(0.1, InternalRegeneratePlayers, _);
 }
 
 void SetAllPlayersSharedRandomClass()
@@ -167,14 +174,7 @@ void SetAllPlayersSharedRandomClass()
 		}
 	}
 
-	/* We need to loop again otherwise we regenerate too quickly and break players. */
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			TF2_RegeneratePlayer(i);
-		}
-	}
+	CreateTimer(0.1, InternalRegeneratePlayers, _);
 }
 
 void SetAllPlayersClass(TFClassType class)
@@ -187,14 +187,7 @@ void SetAllPlayersClass(TFClassType class)
 		}
 	}
 
-	/* We need to loop again otherwise we regenerate too quickly and break players. */
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			TF2_RegeneratePlayer(i);
-		}
-	}
+	CreateTimer(0.1, InternalRegeneratePlayers, _);
 }
 
 void SetAllPlayersTeam(TFClassType class, TFTeam team)
@@ -210,12 +203,5 @@ void SetAllPlayersTeam(TFClassType class, TFTeam team)
 		}
 	}
 
-	/* We need to loop again otherwise we regenerate too quickly and break players. */
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			TF2_RegeneratePlayer(i);
-		}
-	}
+	CreateTimer(0.1, InternalRegeneratePlayers, _);
 }
