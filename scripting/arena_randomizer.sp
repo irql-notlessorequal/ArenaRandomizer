@@ -573,6 +573,11 @@ public void SetWeaponAmmo(int client, int slot1, int slot2)
 
 bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool printAttribs)
 {
+	if (weapon == -1)
+	{
+		return false;
+	}
+
 	if (attributes == null)
 	{
 		return false;
@@ -581,7 +586,7 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool p
 	if (MalletIsWearable(weapon))
 	{
 		/* Applying attributes to a wearable causes crashes, apply it to the player instead. */
-		weapon = GetEntPropEnt(weapon, Prop_Data, "m_hOwnerEntity");
+		weapon = client;
 	}
 
 	for (int idx = 0; idx < attributes.Length; idx++)
