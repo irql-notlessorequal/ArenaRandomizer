@@ -1243,7 +1243,8 @@ public Action PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
 		}
 
-		EmitSoundToAll(.sample = path, .entity = SOUND_FROM_WORLD, .origin = position);
+		/* SNDLEVEL_RAIDSIREN should cover the majority of the map? */
+		EmitSoundToAll(.sample = path, .entity = SOUND_FROM_WORLD, .level = SNDLEVEL_RAIDSIREN, .origin = position);
 	}
 	else
 	{
