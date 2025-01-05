@@ -591,7 +591,7 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool p
 		int id = attribute.GetInt("id", -2);
 
 		/* Do the check early since we will be overriding the value in a moment. */
-		bool is_random = id == -1;
+		bool is_random = id == ARENA_RANDOMIZER_RANDOM_ATTRIBUTE;
 
 		if (id <= -2)
 		{
@@ -601,7 +601,7 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool p
 
 		float value;
 
-		if (id == -1)
+		if (id == ARENA_RANDOMIZER_RANDOM_ATTRIBUTE)
 		{
 			/* Treat this as a special value to generate a random attribute. */
 			id = GetRandomAttributeID();
@@ -934,8 +934,8 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 				}
 				else
 				{
-					SetFailState("ArenaRound: Object set the special value KEEP_WEAPON without providing attributes...");
-					return;
+					/* Allow providing "ARENA_RANDOMIZER_WEAPON_KEEP" without attributes. */
+					continue;
 				}
 			}
 			else if (JSON_CONTAINS_KEY(weapon, "attributes"))
