@@ -124,7 +124,7 @@ int GetRandomAttributeID()
 
 void SetHealthForAll(int health)
 {
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -135,7 +135,7 @@ void SetHealthForAll(int health)
 
 void SetAllPlayersRandomClass()
 {
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -146,7 +146,7 @@ void SetAllPlayersRandomClass()
 	}
 
 	/* We need to loop again otherwise we regenerate too quickly and break players. */
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -159,7 +159,7 @@ void SetAllPlayersSharedRandomClass()
 {
 	TFClassType class = view_as<TFClassType>(GetRandomInt(0, 8));
 
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -168,7 +168,7 @@ void SetAllPlayersSharedRandomClass()
 	}
 
 	/* We need to loop again otherwise we regenerate too quickly and break players. */
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -179,7 +179,7 @@ void SetAllPlayersSharedRandomClass()
 
 void SetAllPlayersClass(TFClassType class)
 {
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -188,7 +188,7 @@ void SetAllPlayersClass(TFClassType class)
 	}
 
 	/* We need to loop again otherwise we regenerate too quickly and break players. */
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -199,7 +199,7 @@ void SetAllPlayersClass(TFClassType class)
 
 void SetAllPlayersTeam(TFClassType class, TFTeam team)
 {
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -211,7 +211,7 @@ void SetAllPlayersTeam(TFClassType class, TFTeam team)
 	}
 
 	/* We need to loop again otherwise we regenerate too quickly and break players. */
-	for (int i = 1; i < MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{

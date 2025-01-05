@@ -1329,12 +1329,12 @@
 					{
 						"id": 248,
 						"name": "charge_impact_damage",
-						"value": 2
+						"value": 1
 					},
 					{
 						"id": 249,
 						"name": "charge_recharge_rate",
-						"value": 1
+						"value": 2.0
 					}
 				]
 			},
@@ -1374,7 +1374,7 @@
 			}
 		],
 		"attributes": {
-			"round_start_audio": "sound/vo/engineer_goldenwrenchkill02.mp3"
+			"round_start_audio": "vo/engineer_goldenwrenchkill02.mp3"
 		},
 		"keep_weapons": true,
 		"special_round": true,
