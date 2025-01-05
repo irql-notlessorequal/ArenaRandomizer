@@ -1235,7 +1235,8 @@ public Action PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		/* Place the funnies at the point of death. */
 		float position[3];
 
-		int entity = event.GetInt("inflictor_entindex");
+		/* Get the position of the victim, since the attacker position isn't always available. */
+		int entity = GetClientOfUserId(GetEventInt(event, "userid"));
 		if (entity)
 		{
 			GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
