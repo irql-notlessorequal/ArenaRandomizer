@@ -153,7 +153,7 @@ void SetAllPlayersRandomClass()
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
-			TFClassType class = view_as<TFClassType>(GetRandomInt(0, 8));
+			TFClassType class = view_as<TFClassType>(GetRandomInt(1, 9));
 
 			TF2_SetPlayerClass(.client = i, .classType = class, .persistent = false);
 		}
@@ -164,7 +164,7 @@ void SetAllPlayersRandomClass()
 
 void SetAllPlayersSharedRandomClass()
 {
-	TFClassType class = view_as<TFClassType>(GetRandomInt(0, 8));
+	TFClassType class = view_as<TFClassType>(GetRandomInt(1, 9));
 
 	for (int i = 1; i <= MaxClients; i++)
 	{
