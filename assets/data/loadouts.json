@@ -1327,14 +1327,19 @@
 				
 				"attributes": [
 					{
+						"id": 202,
+						"name": "mod_charge_time",
+						"value": 10
+					},
+					{
 						"id": 248,
 						"name": "charge_impact_damage",
-						"value": 1
+						"value": 10
 					},
 					{
 						"id": 249,
 						"name": "charge_recharge_rate",
-						"value": 2.0
+						"value": 100.0
 					}
 				]
 			},
@@ -1353,6 +1358,27 @@
 			}
 		],
 		"name": "Demo Train"
+	},
+	{
+		"classes": {
+			"all": "heavy"
+		},
+		"weapons": [
+			{
+				"id": 44,
+				"name": "tf_weapon_bat_wood",
+				"slot": "melee",
+
+				"attributes": [
+					{
+						"id": 618,
+						"name": "throwable_recharge_time",
+						"value": 0.01
+					}
+				]
+			}
+		],
+		"name": "Heavy Hail"
 	},
 	{
 		"classes": {
