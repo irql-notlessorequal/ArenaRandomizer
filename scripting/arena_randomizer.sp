@@ -312,7 +312,8 @@ public void OnPluginStart()
 
 	HookEvent("arena_round_start", ArenaRound, EventHookMode_PostNoCopy);
 	HookEvent("arena_win_panel", RoundEndAudio, EventHookMode_PostNoCopy);
-	HookEvent("player_death", PlayerDeath, EventHookMode_PostNoCopy);
+	/* Must be MODE_PRE otherwise the event object won't be copied over. */
+	HookEvent("player_death", PlayerDeath, EventHookMode_Pre);
 
 	CON_VAR_ARENA_USE_QUEUE = FindConVar("tf_arena_use_queue");
 	if (CON_VAR_ARENA_USE_QUEUE == INVALID_HANDLE)
