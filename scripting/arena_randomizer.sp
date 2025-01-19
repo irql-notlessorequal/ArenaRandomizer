@@ -807,22 +807,40 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 			}
 		}
 	} else if (JSON_CONTAINS_KEY(classes, ARENA_RANDOMIZER_CLASS_RED) && JSON_CONTAINS_KEY(classes, ARENA_RANDOMIZER_CLASS_BLUE))  {
-		char _red[10];
+		char _red[16];
 		classes.GetString(ARENA_RANDOMIZER_CLASS_RED, _red, sizeof(_red));
 
-		char _blue[10];
+		char _blue[16];
 		classes.GetString(ARENA_RANDOMIZER_CLASS_BLUE, _blue, sizeof(_blue));
 
-		TFClassType red = view_as<TFClassType>(MalletConvertClassFromString(_red));
+		TFClassType red;
+		if (strcmp(_red, ARENA_RANDOMIZER_CLASS_RANDOM_SHARED) == 0)
+		{
+			red = view_as<TFClassType>(GetRandomInt(1, 9));
+		}
+		else
+		{
+			red = view_as<TFClassType>(MalletConvertClassFromString(_red));
+		}
 
-		if (red == TFClass_Unknown) {
+		if (red == TFClass_Unknown)
+		{
 			SetFailState("ArenaRound: Invalid formatted data object, requested an unknown class for RED players.");
 			return;
 		}
 
-		TFClassType blue = view_as<TFClassType>(MalletConvertClassFromString(_blue));
+		TFClassType blue;
+		if (strcmp(_blue, ARENA_RANDOMIZER_CLASS_RANDOM_SHARED) == 0)
+		{
+			blue = view_as<TFClassType>(GetRandomInt(1, 9));
+		}
+		else
+		{
+			blue = view_as<TFClassType>(MalletConvertClassFromString(_blue));
+		}
 
-		if (blue == TFClass_Unknown) {
+		if (blue == TFClass_Unknown)
+		{
 			SetFailState("ArenaRound: Invalid formatted data object, requested an unknown class for BLU players.");
 			return;
 		}
@@ -1131,7 +1149,6 @@ public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
 	}
 
 	bool IsSpecialRound = entry.GetBool("special_round");
-
 	ShowTextPrompt(_name, IsSpecialRound ? SPECIAL_ROUND_UI_ICON : DEFAULT_UI_ICON, 14.92);
 
 	if (JSON_CONTAINS_KEY(entry, "special_round_code"))

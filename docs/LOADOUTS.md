@@ -59,6 +59,9 @@ The name of the round, as a *string*, this will be shown to the players.
 
 Controls what classes are applied on players.
 
+Special values for `red` and `blue`:
+- `random-shared` sets a random class for the team.
+
 Special values for `all`:
 
 - `random` sets a random class per player.

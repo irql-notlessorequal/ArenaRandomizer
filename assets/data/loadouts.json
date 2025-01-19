@@ -1382,6 +1382,63 @@
 	},
 	{
 		"classes": {
+			"all": "soldier"
+		},
+		"weapons": [
+			{
+				"id": 228,
+				"name": "tf_weapon_rocketlauncher",
+				"slot": "primary",
+
+				"attributes": [
+					{
+						"id": 2,
+						"name": "mult_dmg",
+						"value": 5.0
+					},
+					{
+						"id": 99,
+						"name": "mult_explosion_radius",
+						"value": 3.0
+					},
+					{
+						"id": 521,
+						"name": "use_large_smoke_explosion",
+						"value": 1.0
+					},
+					{
+						"id": 3,
+						"name": "mult_clipsize",
+						"value": 0.25
+					},
+					{
+						"id": 104,
+						"name": "mult_projectile_speed",
+						"value": 0.3
+					},
+					{
+						"id": 77,
+						"name": "mult_maxammo_primary",
+						"value": 0.0
+					},
+					{
+						"id": 16,
+						"name": "add_onhit_addhealth",
+						"value": 0.0
+					}
+				]
+			},
+			{
+				"id": 6,
+				"name": "tf_weapon_shovel",
+				"slot": "melee"
+			}
+		],
+		"special_round": true,
+		"name": "The Armies of One"
+	},
+	{
+		"classes": {
 			"all": "random"
 		},
 		"weapons": [
