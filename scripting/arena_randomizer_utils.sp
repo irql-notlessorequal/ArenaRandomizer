@@ -203,3 +203,14 @@ void SetAllPlayersTeam(TFClassType class, TFTeam team)
 
 	InternalRegeneratePlayers();
 }
+
+stock int GetAliveTeamCount(int team)
+{
+	int number = 0;
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) == team) 
+			number++;
+	}
+	return number;
+}

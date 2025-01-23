@@ -333,8 +333,9 @@ public void OnPluginStart()
 	RegAdminCmd("arena_randomizer_running", ArenaRandomizerRunning, ADMFLAG_ROOT, "Prints Arena Randomizer's status.");
 
 	HookEvent("arena_round_start", ArenaRoundStart, EventHookMode_PostNoCopy);
-	HookEvent("teamplay_round_active", RoundStartAlternate, EventHookMode_PostNoCopy);
+	HookEvent("teamplay_setup_finished", RoundStartAlternate, EventHookMode_PostNoCopy);
 	HookEvent("arena_win_panel", RoundEndAudio, EventHookMode_PostNoCopy);
+	HookEvent("teamplay_point_locked", RoundEndAlternate, EventHookMode_Post);
 	/* Must be MODE_PRE otherwise the event object won't be copied over. */
 	HookEvent("player_death", PlayerDeath, EventHookMode_Pre);
 
@@ -808,10 +809,15 @@ public void RoundStartAlternate(Handle event, const char[] name, bool dontBroadc
 	if (!AlternateBehaviourRequired)
 		return;
 
+	if (GameRules_GetProp("m_bInWaitingForPlayers"))
+		return;
+
 #if defined(DEBUG)
 	PrintToServer("[ArenaRandomizer::RoundStartAlternate] [DEBUG] Redirecting `teamplay_round_active` to ArenaRandomizer...");
 #endif
-	ArenaRound();
+	
+	/* We need to delay the call since the plugin is about to respawn everyone. */
+	CreateTimer(9.0, ArenaRoundDelayed);
 }
 
 public void ArenaRoundStart(Handle event, const char[] name, bool dontBroadcast)
@@ -826,6 +832,12 @@ public void ArenaRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	PrintToServer("[ArenaRandomizer::ArenaRoundStart] [DEBUG] Redirecting `arena_round_start` to ArenaRandomizer...");
 #endif
 	ArenaRound();
+}
+
+public Action ArenaRoundDelayed(Handle timer, int serial)
+{
+	ArenaRound();
+	return Plugin_Stop;
 }
 
 void ArenaRound()
@@ -1252,10 +1264,60 @@ public void RoundEndAudio(Handle event, const char[] name, bool dontBroadcast)
 	if (!IsArenaRandomizer)
 		return;
 
-	/* Reset all attributes now, so anything won't explode next round. */
-	CreateTimer(10.00, ResetAllAttributes, _);
+	if (AlternateBehaviourRequired)
+		return;
 
-	CreateTimer(14.92, PlayRoundEndClip, _);
+	DoRoundEnd(false);
+}
+
+public void RoundEndAlternate(Handle event, const char[] name, bool dontBroadcast)
+{
+	if (!IsArenaRandomizer)
+		return;
+	
+	if (!AlternateBehaviourRequired)
+		return;
+
+	if (GameRules_GetProp("m_bInWaitingForPlayers"))
+		return;
+
+	if (GameRules_GetProp("m_bInSetup"))
+		return;
+
+	int remainingBlue = GetAliveTeamCount(TFTeam_Blue);
+	int remainingRed = GetAliveTeamCount(TFTeam_Red);
+
+	/**
+	 * FIXME(irql): Technically, this doesn't account for stalemates...
+	 */
+	bool killBasedWin = (remainingBlue != remainingRed) &&
+		(remainingBlue == 0 || remainingRed == 0);
+
+	int team = GetEventInt(event, "team", -1);
+
+	PrintToServer("[ArenaRandomizer:RoundEndAlternate] [DEBUG] team=%d, remainingBlue=%d, remainingRed=%d, killBasedWin=%d",
+		team, remainingBlue, remainingRed, killBasedWin);
+
+	if (team == -1)
+	{
+		SetFailState("RoundEndAlternate: Failed to read the control point state!");
+		return;
+	}
+
+	if (!killBasedWin && (team == view_as<int>(TFTeam_Spectator) || team == view_as<int>(TFTeam_Unassigned)))
+	{
+		return;
+	}
+	
+	DoRoundEnd(true);
+}
+
+void DoRoundEnd(bool requiresShorterTimes)
+{
+	/* Reset all attributes now, so anything won't explode next round. */
+	CreateTimer(requiresShorterTimes ? 1.00 : 10.00, ResetAllAttributes, _);
+
+	CreateTimer(requiresShorterTimes ? 6.00 : 14.92, PlayRoundEndClip, _);
 
 	/* Clear the kill audio queue. */
 	OnKillAudioList.Clear();
