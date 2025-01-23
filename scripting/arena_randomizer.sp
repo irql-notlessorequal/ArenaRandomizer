@@ -27,8 +27,7 @@ static const char ARENA_RANDOMIZER_WORKAROUND_REQUIRED[][] = {
 	/**
 	 * Official.
 	 */
-	"arena_perks",
-	"arena_lumberyard_event"
+	"arena_perks"
 };
 
 public Plugin myinfo = 
@@ -36,7 +35,7 @@ public Plugin myinfo =
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "0.0.37",
+	version = "0.0.38",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -46,8 +45,8 @@ public Plugin myinfo =
  */
 static int HasEnhancedMapDetectionSupport = MAP_DETECTION_UNAVAILABLE;
 static ArenaRandomizerSpecialRoundLogic SpecialRoundLogic = DISABLED;
+static ArenaRandomizerWorkaroundMethod WorkaroundMode = NO_WORKAROUND;
 static bool IsArenaRandomizer = true;
-static bool AlternateBehaviourRequired = false;
 static ArrayList CustomAssets;
 /* i weep */
 static ArrayStack EndRoundAudioQueue;
@@ -376,26 +375,32 @@ public void OnMapInit(const char[] mapName)
 	IsArenaRandomizer = true;
 	PrintToServer("[ArenaRandomizer] Detected %s as an Arena Randomizer Map, pre-loading audio.", mapName);
 
-	AlternateBehaviourRequired = RequiresOverride(mapName);
-	if (AlternateBehaviourRequired)
+	if (MapRequiresWorkaround(mapName))
 	{
-		PrintToServer("[ArenaRandomizer] Working around map issues, using alternate map hooks.");
+		PrintToServer("[ArenaRandomizer] Working around map issues.");
 	}
 
 	/* Pre-load the required assets to avoid console spam. */
 	SendContentHint();
 }
 
-bool RequiresOverride(const char[] mapName)
+bool MapRequiresWorkaround(const char[] mapName)
 {
 	for (int i = 0; i < sizeof (ARENA_RANDOMIZER_WORKAROUND_REQUIRED); i++)
 	{
 		if (strcmp(ARENA_RANDOMIZER_WORKAROUND_REQUIRED[i], mapName) == 0)
 		{
+			if (strcmp(mapName, "arena_perks") == 0)
+			{
+				/* TODO(irql): Figure out a cleaner way to do map specific workarounds. */
+				WorkaroundMode = WA_ARENA_PERKS;
+			}
+
 			return true;
 		}
 	}
 
+	WorkaroundMode = NO_WORKAROUND;
 	return false;
 }
 
@@ -810,7 +815,7 @@ public void RoundStartAlternate(Handle event, const char[] name, bool dontBroadc
 	if (!IsArenaRandomizer)
 		return;
 
-	if (!AlternateBehaviourRequired)
+	if (WorkaroundMode != WA_ARENA_PERKS)
 		return;
 
 	if (GameRules_GetProp("m_bInWaitingForPlayers"))
@@ -829,7 +834,7 @@ public void ArenaRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	if (!IsArenaRandomizer)
 		return;
 
-	if (AlternateBehaviourRequired)
+	if (WorkaroundMode)
 		return;
 
 #if defined(DEBUG)
@@ -1268,10 +1273,10 @@ public void RoundEndAudio(Handle event, const char[] name, bool dontBroadcast)
 	if (!IsArenaRandomizer)
 		return;
 
-	if (AlternateBehaviourRequired)
+	if (WorkaroundMode)
 		return;
 
-	DoRoundEnd(false);
+	DoRoundEnd();
 }
 
 public void RoundEndAlternate(Handle event, const char[] name, bool dontBroadcast)
@@ -1279,7 +1284,7 @@ public void RoundEndAlternate(Handle event, const char[] name, bool dontBroadcas
 	if (!IsArenaRandomizer)
 		return;
 	
-	if (!AlternateBehaviourRequired)
+	if (WorkaroundMode != WA_ARENA_PERKS)
 		return;
 
 	if (GameRules_GetProp("m_bInWaitingForPlayers"))
@@ -1313,15 +1318,27 @@ public void RoundEndAlternate(Handle event, const char[] name, bool dontBroadcas
 		return;
 	}
 	
-	DoRoundEnd(true);
+	DoRoundEnd();
 }
 
-void DoRoundEnd(bool requiresShorterTimes)
+void DoRoundEnd()
 {
-	/* Reset all attributes now, so anything won't explode next round. */
-	CreateTimer(requiresShorterTimes ? 1.00 : 10.00, ResetAllAttributes, _);
+	switch (WorkaroundMode)
+	{
+		/* Reset all attributes now, so anything won't explode next round. */
+		case WA_ARENA_PERKS:
+		{
+			CreateTimer(1.00, ResetAllAttributes, _);
 
-	CreateTimer(requiresShorterTimes ? 5.00 : 14.92, PlayRoundEndClip, _);
+			CreateTimer(5.00, PlayRoundEndClip, _);			
+		}
+		default:
+		{
+			CreateTimer(10.00, ResetAllAttributes, _);
+
+			CreateTimer(14.92, PlayRoundEndClip, _);
+		}
+	}
 
 	/* We somehow get "SpecialRoundLogic" desynchronized in rare cases, make sure that DOES NOT happen. */
 	SpecialRoundLogic = DISABLED;

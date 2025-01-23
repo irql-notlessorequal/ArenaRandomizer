@@ -80,6 +80,17 @@ enum ArenaRandomizerSpecialRoundLogic
 	BLEED_FOR_EIGHT_SECONDS = 2
 };
 
+enum ArenaRandomizerWorkaroundMethod
+{
+	NO_WORKAROUND = 0,
+	/**
+	 * Perks requires the following:
+	 * - Alternate Event Hooks
+	 * - Alternate Audio Timing
+	 */
+	WA_ARENA_PERKS = 1
+};
+
 bool ShouldCondCauseBleed(TFCond cond)
 {
 	/**
