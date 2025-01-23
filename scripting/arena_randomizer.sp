@@ -19,12 +19,20 @@ static const char ARENA_RANDOMIZER_ROUND_START_SPECIAL[][] = {
 	"ui/duel_score_behind.wav"
 };
 
+/**
+ * These maps don't use regular logic due to VScript management of the gamemode.
+ * Use alternate behavior instead.
+ */
+static const char ARENA_RANDOMIZER_WORKAROUND_REQUIRED[][] = {
+	"arena_perks"
+};
+
 public Plugin myinfo = 
 {
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "0.0.36",
+	version = "0.0.37",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -35,6 +43,7 @@ public Plugin myinfo =
 static int HasEnhancedMapDetectionSupport = MAP_DETECTION_UNAVAILABLE;
 static ArenaRandomizerSpecialRoundLogic SpecialRoundLogic = DISABLED;
 static bool IsArenaRandomizer = true;
+static bool AlternateBehaviourRequired = false;
 static ArrayList CustomAssets;
 /* i weep */
 static ArrayStack EndRoundAudioQueue;
@@ -66,8 +75,21 @@ bool InitJsonData()
 	}
 
 	CloseHandle(file);
-	DATA = view_as<JSON_Array>(json_decode(buffer));
 
+	JSON_Object tmp = json_decode(buffer);
+	if (!tmp)
+	{
+		SetFailState("InitJsonData: json_decode returned NULL!");
+		return false;		
+	}
+
+	if (!tmp.IsArray)
+	{
+		SetFailState("InitJsonData: Expected an array, got an object instead!");
+		return false;			
+	}
+
+	DATA = view_as<JSON_Array>(tmp);
 	PrintToServer("[ArenaRandomizer] InitJsonData: Loaded %i loadouts.", DATA.Length);
 	return true;
 }
@@ -310,7 +332,8 @@ public void OnPluginStart()
 	RegAdminCmd("arena_randomizer_reload", ArenaRandomizerReload, ADMFLAG_ROOT, "Reloads the loadout config.");
 	RegAdminCmd("arena_randomizer_running", ArenaRandomizerRunning, ADMFLAG_ROOT, "Prints Arena Randomizer's status.");
 
-	HookEvent("arena_round_start", ArenaRound, EventHookMode_PostNoCopy);
+	HookEvent("arena_round_start", ArenaRoundStart, EventHookMode_PostNoCopy);
+	HookEvent("teamplay_round_active", RoundStartAlternate, EventHookMode_PostNoCopy);
 	HookEvent("arena_win_panel", RoundEndAudio, EventHookMode_PostNoCopy);
 	/* Must be MODE_PRE otherwise the event object won't be copied over. */
 	HookEvent("player_death", PlayerDeath, EventHookMode_Pre);
@@ -348,8 +371,27 @@ public void OnMapInit(const char[] mapName)
 	IsArenaRandomizer = true;
 	PrintToServer("[ArenaRandomizer] Detected %s as an Arena Randomizer Map, pre-loading audio.", mapName);
 
+	AlternateBehaviourRequired = RequiresOverride(mapName);
+	if (AlternateBehaviourRequired)
+	{
+		PrintToServer("[ArenaRandomizer] Working around map issues, using alternate map hooks.");
+	}
+
 	/* Pre-load the required assets to avoid console spam. */
 	SendContentHint();
+}
+
+bool RequiresOverride(const char[] mapName)
+{
+	for (int i = 0; i < sizeof (ARENA_RANDOMIZER_WORKAROUND_REQUIRED); i++)
+	{
+		if (strcmp(ARENA_RANDOMIZER_WORKAROUND_REQUIRED[i], mapName) == 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 public Action ArenaRandomizerReload(int client, int args)
@@ -467,25 +509,25 @@ public void ShowTextPrompt(const char[] strMessage, const char[] strIcon, const 
 	if (GameTextHandle != INVALID_HANDLE) TriggerTimer(GameTextHandle);
 
 	int iEntity = CreateEntityByName("game_text_tf");
-    DispatchKeyValue(iEntity, "message", strMessage);
-    DispatchKeyValue(iEntity, "display_to_team", "0");
-    DispatchKeyValue(iEntity, "icon", strIcon);
-    DispatchKeyValue(iEntity, "targetname", "game_text1");
-    DispatchKeyValue(iEntity, "background", "0");
-    DispatchSpawn(iEntity);
-    AcceptEntityInput(iEntity, "Display", iEntity, iEntity);
+	DispatchKeyValue(iEntity, "message", strMessage);
+	DispatchKeyValue(iEntity, "display_to_team", "0");
+	DispatchKeyValue(iEntity, "icon", strIcon);
+	DispatchKeyValue(iEntity, "targetname", "game_text1");
+	DispatchKeyValue(iEntity, "background", "0");
+	DispatchSpawn(iEntity);
+	AcceptEntityInput(iEntity, "Display", iEntity, iEntity);
 
 	GameTextHandle = CreateTimer(duration, KillGameText, iEntity);
 }
 
 public Action KillGameText(Handle hTimer, any iEntityRef)
 {
-    int iEntity = EntRefToEntIndex(view_as<int>(iEntityRef));
-    if ((iEntity > 0) && IsValidEntity(iEntity)) AcceptEntityInput(iEntity, "kill");
-    
-    GameTextHandle = INVALID_HANDLE;
-    
-    return Plugin_Stop;
+	int iEntity = EntRefToEntIndex(view_as<int>(iEntityRef));
+	if ((iEntity > 0) && IsValidEntity(iEntity)) AcceptEntityInput(iEntity, "kill");
+		
+	GameTextHandle = INVALID_HANDLE;
+		
+	return Plugin_Stop;
 }
 
 bool __CONVERT_TO_COMPATIBLE_TYPE(const JSON_Object attribute, const char[] name, const JSONCellType ct, float &ret)
@@ -758,12 +800,40 @@ public bool GiveWeaponToTeam(TFTeam team, int weaponId, const char[] weaponName,
 	return true;
 }
 
-public void ArenaRound(Handle event, const char[] name, bool dontBroadcast)
+public void RoundStartAlternate(Handle event, const char[] name, bool dontBroadcast)
 {
 	if (!IsArenaRandomizer)
 		return;
 
+	if (!AlternateBehaviourRequired)
+		return;
+
+#if defined(DEBUG)
+	PrintToServer("[ArenaRandomizer::RoundStartAlternate] [DEBUG] Redirecting `teamplay_round_active` to ArenaRandomizer...");
+#endif
+	ArenaRound();
+}
+
+public void ArenaRoundStart(Handle event, const char[] name, bool dontBroadcast)
+{
+	if (!IsArenaRandomizer)
+		return;
+
+	if (AlternateBehaviourRequired)
+		return;
+
+#if defined(DEBUG)
+	PrintToServer("[ArenaRandomizer::ArenaRoundStart] [DEBUG] Redirecting `arena_round_start` to ArenaRandomizer...");
+#endif
+	ArenaRound();
+}
+
+void ArenaRound()
+{
 	int idx = GetLoadoutIdx();
+#if defined(DEBUG)
+	PrintToServer("[ArenaRandomizer::ArenaRound] [DEBUG] Preparing loadout idx: %d", idx);
+#endif
 	JSON_Object entry = DATA.GetObject(idx);
 
 	if (entry == null) {
