@@ -19,15 +19,12 @@ static const char ARENA_RANDOMIZER_ROUND_START_SPECIAL[][] = {
 	"ui/duel_score_behind.wav"
 };
 
-/**
- * These maps don't use regular logic due to VScript management of the gamemode.
- * Use alternate behavior instead.
- */
-static const char ARENA_RANDOMIZER_WORKAROUND_REQUIRED[][] = {
-	/**
-	 * Official.
-	 */
+static const char ARENA_RANDOMIZER_WORKAROUND_PERKS[][] = {
 	"arena_perks"
+};
+
+static const char ARENA_RANDOMIZER_WORKAROUND_LAE[][] = {
+	"arena_lumberyard_event"
 };
 
 public Plugin myinfo = 
@@ -339,6 +336,7 @@ public void OnPluginStart()
 	HookEvent("teamplay_setup_finished", RoundStartAlternate, EventHookMode_PostNoCopy);
 	HookEvent("arena_win_panel", RoundEndAudio, EventHookMode_PostNoCopy);
 	HookEvent("teamplay_point_locked", RoundEndAlternate, EventHookMode_Post);
+	HookEvent("teamplay_win_panel", RoundEndAlternate2, EventHookMode_PostNoCopy);
 	/* Must be MODE_PRE otherwise the event object won't be copied over. */
 	HookEvent("player_death", PlayerDeath, EventHookMode_Pre);
 
@@ -386,19 +384,23 @@ public void OnMapInit(const char[] mapName)
 
 bool MapRequiresWorkaround(const char[] mapName)
 {
-	for (int i = 0; i < sizeof (ARENA_RANDOMIZER_WORKAROUND_REQUIRED); i++)
+	for (int i = 0; i < sizeof (ARENA_RANDOMIZER_WORKAROUND_PERKS); i++)
 	{
-		if (strcmp(ARENA_RANDOMIZER_WORKAROUND_REQUIRED[i], mapName) == 0)
+		if (strcmp(ARENA_RANDOMIZER_WORKAROUND_PERKS[i], mapName) == 0)
 		{
-			if (strcmp(mapName, "arena_perks") == 0)
-			{
-				/* TODO(irql): Figure out a cleaner way to do map specific workarounds. */
-				WorkaroundMode = WA_ARENA_PERKS;
-			}
-
+			WorkaroundMode = WA_ARENA_PERKS;
 			return true;
 		}
 	}
+
+	for (int i = 0; i < sizeof (ARENA_RANDOMIZER_WORKAROUND_LAE); i++)
+	{
+		if (strcmp(ARENA_RANDOMIZER_WORKAROUND_LAE[i], mapName) == 0)
+		{
+			WorkaroundMode = WA_LUMBERYARD_EVENT;
+			return true;
+		}
+	}	
 
 	WorkaroundMode = NO_WORKAROUND;
 	return false;
@@ -815,7 +817,7 @@ public void RoundStartAlternate(Handle event, const char[] name, bool dontBroadc
 	if (!IsArenaRandomizer)
 		return;
 
-	if (WorkaroundMode != WA_ARENA_PERKS)
+	if (WorkaroundMode != WA_ARENA_PERKS && WorkaroundMode != WA_LUMBERYARD_EVENT)
 		return;
 
 	if (GameRules_GetProp("m_bInWaitingForPlayers"))
@@ -825,8 +827,23 @@ public void RoundStartAlternate(Handle event, const char[] name, bool dontBroadc
 	PrintToServer("[ArenaRandomizer::RoundStartAlternate] [DEBUG] Redirecting `teamplay_round_active` to ArenaRandomizer...");
 #endif
 	
-	/* We need to delay the call since the plugin is about to respawn everyone. */
-	CreateTimer(9.0, ArenaRoundDelayed);
+	switch (WorkaroundMode)
+	{
+		case WA_ARENA_PERKS:
+		{
+			/* We need to delay the call since the map is about to respawn everyone plus run a bonus timer. */
+			CreateTimer(9.0, ArenaRoundDelayed);
+		}
+		case WA_LUMBERYARD_EVENT:
+		{
+			/* This map respawns players on round start, we need to delay for a second. */
+			CreateTimer(1.0, ArenaRoundDelayed);			
+		}
+		default:
+		{
+			ArenaRound();
+		}
+	}
 }
 
 public void ArenaRoundStart(Handle event, const char[] name, bool dontBroadcast)
@@ -1318,6 +1335,17 @@ public void RoundEndAlternate(Handle event, const char[] name, bool dontBroadcas
 		return;
 	}
 	
+	DoRoundEnd();
+}
+
+public void RoundEndAlternate2(Handle event, const char[] name, bool dontBroadcast)
+{
+	if (!IsArenaRandomizer)
+		return;
+	
+	if (WorkaroundMode != WA_LUMBERYARD_EVENT)
+		return;
+
 	DoRoundEnd();
 }
 

@@ -87,8 +87,15 @@ enum ArenaRandomizerWorkaroundMethod
 	 * Perks requires the following:
 	 * - Alternate Event Hooks
 	 * - Alternate Audio Timing
+	 * - Delayed Loadout application
 	 */
-	WA_ARENA_PERKS = 1
+	WA_ARENA_PERKS = 1,
+	/**
+	 * Graveyard requires the following:
+	 * - Alternate Event Hooks
+	 * - Delayed Loadout application
+	 */
+	WA_LUMBERYARD_EVENT = 2
 };
 
 bool ShouldCondCauseBleed(TFCond cond)
