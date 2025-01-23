@@ -24,7 +24,11 @@ static const char ARENA_RANDOMIZER_ROUND_START_SPECIAL[][] = {
  * Use alternate behavior instead.
  */
 static const char ARENA_RANDOMIZER_WORKAROUND_REQUIRED[][] = {
-	"arena_perks"
+	/**
+	 * Official.
+	 */
+	"arena_perks",
+	"arena_lumberyard_event"
 };
 
 public Plugin myinfo = 
@@ -1317,7 +1321,10 @@ void DoRoundEnd(bool requiresShorterTimes)
 	/* Reset all attributes now, so anything won't explode next round. */
 	CreateTimer(requiresShorterTimes ? 1.00 : 10.00, ResetAllAttributes, _);
 
-	CreateTimer(requiresShorterTimes ? 6.00 : 14.92, PlayRoundEndClip, _);
+	CreateTimer(requiresShorterTimes ? 5.00 : 14.92, PlayRoundEndClip, _);
+
+	/* We somehow get "SpecialRoundLogic" desynchronized in rare cases, make sure that DOES NOT happen. */
+	SpecialRoundLogic = DISABLED;
 
 	/* Clear the kill audio queue. */
 	OnKillAudioList.Clear();
