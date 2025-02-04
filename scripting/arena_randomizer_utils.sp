@@ -98,7 +98,7 @@ enum ArenaRandomizerWorkaroundMethod
 	WA_LUMBERYARD_EVENT = 2
 };
 
-bool ShouldCondCauseBleed(TFCond cond)
+stock bool ShouldCondCauseBleed(TFCond cond)
 {
 	/**
 	 * Apparently SourcePawn won't let me stack cases in a switch.
@@ -129,18 +129,18 @@ bool ShouldCondCauseBleed(TFCond cond)
 	}
 }
 
-int GetRandomWeapon()
+stock int GetRandomWeapon()
 {
 	/* TODO(rake) */
 	return -1;
 }
 
-int GetRandomAttributeID()
+stock int GetRandomAttributeID()
 {
 	return MalletGetRandomAttribute(true);
 }
 
-void SetHealthForAll(int health)
+stock void SetHealthForAll(int health)
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -151,7 +151,7 @@ void SetHealthForAll(int health)
 	}
 }
 
-void InternalRegeneratePlayers()
+stock void InternalRegeneratePlayers()
 {
 	/* We need to loop again otherwise we regenerate too quickly and break players. */
 	for (int i = 1; i <= MaxClients; i++)
@@ -163,7 +163,7 @@ void InternalRegeneratePlayers()
 	}
 }
 
-void SetAllPlayersRandomClass()
+stock void SetAllPlayersRandomClass()
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -178,7 +178,7 @@ void SetAllPlayersRandomClass()
 	InternalRegeneratePlayers();
 }
 
-void SetAllPlayersSharedRandomClass()
+stock void SetAllPlayersSharedRandomClass()
 {
 	TFClassType class = view_as<TFClassType>(GetRandomInt(1, 9));
 
@@ -193,7 +193,7 @@ void SetAllPlayersSharedRandomClass()
 	InternalRegeneratePlayers();
 }
 
-void SetAllPlayersClass(TFClassType class)
+stock void SetAllPlayersClass(TFClassType class)
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -206,7 +206,7 @@ void SetAllPlayersClass(TFClassType class)
 	InternalRegeneratePlayers();
 }
 
-void SetAllPlayersTeam(TFClassType class, TFTeam team)
+stock void SetAllPlayersTeam(TFClassType class, TFTeam team)
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{

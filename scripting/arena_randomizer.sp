@@ -709,7 +709,7 @@ public bool GiveWeaponToAllWithAttributes(int weaponId, const char[] weaponName,
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
-			int weaponEntity = MalletCreateWeaponDumb(i, weaponId, weaponName, level, quality, weaponSlot);
+			int weaponEntity = MalletCreateWeapon(i, weaponId, weaponName, level, quality, weaponSlot);
 
 			if (weaponEntity <= 0)
 			{
@@ -721,7 +721,7 @@ public bool GiveWeaponToAllWithAttributes(int weaponId, const char[] weaponName,
 				return false;
 			}
 
-			/* MalletCreateWeaponDumb automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
+			/* MalletCreateWeapon automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
 			if (!MalletIsWearable(weaponEntity))
 			{
 				EquipPlayerWeapon(i, weaponEntity);
@@ -739,7 +739,7 @@ public bool GiveWeaponToTeamWithAttributes(TFTeam team, int weaponId, const char
 		{
 			if (TF2_GetClientTeam(i) == team)
 			{
-				int weaponEntity = MalletCreateWeaponDumb(i, weaponId, weaponName, level, quality, weaponSlot);
+				int weaponEntity = MalletCreateWeapon(i, weaponId, weaponName, level, quality, weaponSlot);
 
 				if (weaponEntity <= 0)
 				{
@@ -751,7 +751,7 @@ public bool GiveWeaponToTeamWithAttributes(TFTeam team, int weaponId, const char
 					return false;
 				}
 
-				/* MalletCreateWeaponDumb automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
+				/* MalletCreateWeapon automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
 				if (!MalletIsWearable(weaponEntity))
 				{
 					EquipPlayerWeapon(i, weaponEntity);
@@ -769,14 +769,14 @@ public bool GiveWeaponToAll(int weaponId, const char[] weaponName, int level, in
 	{
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
-			int weaponEntity = MalletCreateWeaponDumb(i, weaponId, weaponName, level, quality, weaponSlot);
+			int weaponEntity = MalletCreateWeapon(i, weaponId, weaponName, level, quality, weaponSlot);
 
 			if (weaponEntity <= 0)
 			{
 				return false;
 			}
 
-			/* MalletCreateWeaponDumb automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
+			/* MalletCreateWeapon automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
 			if (!MalletIsWearable(weaponEntity))
 			{
 				EquipPlayerWeapon(i, weaponEntity);
@@ -794,14 +794,14 @@ public bool GiveWeaponToTeam(TFTeam team, int weaponId, const char[] weaponName,
 		{
 			if (TF2_GetClientTeam(i) == team)
 			{
-				int weaponEntity = MalletCreateWeaponDumb(i, weaponId, weaponName, level, quality, weaponSlot);
+				int weaponEntity = MalletCreateWeapon(i, weaponId, weaponName, level, quality, weaponSlot);
 
 				if (weaponEntity <= 0)
 				{
 					return false;
 				}
 
-				/* MalletCreateWeaponDumb automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
+				/* MalletCreateWeapon automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
 				if (!MalletIsWearable(weaponEntity))
 				{
 					EquipPlayerWeapon(i, weaponEntity);
