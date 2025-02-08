@@ -724,7 +724,7 @@ public bool GiveWeaponToAllWithAttributes(int weaponId, const char[] weaponName,
 			/* MalletCreateWeapon automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
 			if (!MalletIsWearable(weaponEntity))
 			{
-				EquipPlayerWeapon(i, weaponEntity);
+				MalletSwapWeaponAndPurge(i, weaponEntity, weaponSlot);
 			}
 		}
 	}
@@ -754,7 +754,7 @@ public bool GiveWeaponToTeamWithAttributes(TFTeam team, int weaponId, const char
 				/* MalletCreateWeapon automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
 				if (!MalletIsWearable(weaponEntity))
 				{
-					EquipPlayerWeapon(i, weaponEntity);
+					MalletSwapWeaponAndPurge(i, weaponEntity, weaponSlot);
 				}
 			}
 		}
@@ -779,7 +779,7 @@ public bool GiveWeaponToAll(int weaponId, const char[] weaponName, int level, in
 			/* MalletCreateWeapon automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
 			if (!MalletIsWearable(weaponEntity))
 			{
-				EquipPlayerWeapon(i, weaponEntity);
+				MalletSwapWeaponAndPurge(i, weaponEntity, weaponSlot);
 			}
 		}
 	}
@@ -804,7 +804,7 @@ public bool GiveWeaponToTeam(TFTeam team, int weaponId, const char[] weaponName,
 				/* MalletCreateWeapon automagically equips wearables for us, don't try to equip a wearable or we'll crash. */
 				if (!MalletIsWearable(weaponEntity))
 				{
-					EquipPlayerWeapon(i, weaponEntity);
+					MalletSwapWeaponAndPurge(i, weaponEntity, weaponSlot);
 				}
 			}
 		}
