@@ -688,7 +688,7 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool p
 		if (printAttribs)
 		{
 			char attrStr[256];
-			if (!MalletGetAttributeDescription(id, attrStr, sizeof attrStr, value))
+			if (!MalletGetAttributeDescription(id, attrStr, sizeof (attrStr), mFloatAttribute, value))
 			{
 				PrintToConsole(client, "[unknown attribute (%i)]: %f", id, value);
 			}
