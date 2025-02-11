@@ -639,16 +639,8 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool p
 
 	if (MalletIsWearable(weapon))
 	{
-		int entityOwner = GetEntPropEnt(weapon, Prop_Data, "m_hOwnerEntity");
-
-		if (entityOwner != client)
-		{
-			PrintToServer("ApplyWeaponAttributes(Wearable): m_hOwnerEntity != client");
-			return false;			
-		}
-
 		/* Applying attributes to a wearable causes crashes, apply it to the player instead. */
-		weapon = entityOwner;
+		weapon = GetEntPropEnt(weapon, Prop_Data, "m_hOwnerEntity");
 	}
 
 	for (int idx = 0; idx < attributes.Length; idx++)
