@@ -1361,24 +1361,12 @@
 	},
 	{
 		"classes": {
-			"all": "heavy"
+			"red": "random-shared",
+			"blue": "random-shared"
 		},
-		"weapons": [
-			{
-				"id": 44,
-				"name": "tf_weapon_bat_wood",
-				"slot": "melee",
-
-				"attributes": [
-					{
-						"id": 618,
-						"name": "throwable_recharge_time",
-						"value": 0.01
-					}
-				]
-			}
-		],
-		"name": "Heavy Hail"
+		"keep_weapons": true,
+		"special_round": true,
+		"name": "What Gamemode Am I Playing Again?"
 	},
 	{
 		"classes": {

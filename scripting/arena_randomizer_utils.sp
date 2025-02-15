@@ -77,7 +77,8 @@ enum ArenaRandomizerSpecialRoundLogic
 {
 	DISABLED = 0,
 	GENEVA_SUGGESTION = 1,
-	BLEED_FOR_EIGHT_SECONDS = 2
+	BLEED_FOR_EIGHT_SECONDS = 2,
+	CLASS_WARFARE_LIKE = 3
 };
 
 enum ArenaRandomizerWorkaroundMethod
