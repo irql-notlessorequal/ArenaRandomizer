@@ -48,6 +48,7 @@ static ArrayList CustomAssets;
 /* i weep */
 static ArrayStack EndRoundAudioQueue;
 static ArrayList OnKillAudioList;
+static Handle SuddenDeathTimer = INVALID_HANDLE;
 
 Handle GameTextHandle = INVALID_HANDLE;
 Handle CON_VAR_ARENA_USE_QUEUE = INVALID_HANDLE;
@@ -336,7 +337,6 @@ public void OnPluginStart()
 	HookEvent("teamplay_setup_finished", RoundStartAlternate, EventHookMode_PostNoCopy);
 	HookEvent("arena_win_panel", RoundEndAudio, EventHookMode_PostNoCopy);
 	HookEvent("teamplay_point_locked", RoundEndAlternate, EventHookMode_Post);
-	HookEvent("teamplay_point_unlocked", ControlPointUnlocked, EventHookMode_PostNoCopy);
 	HookEvent("teamplay_win_panel", RoundEndAlternate2, EventHookMode_PostNoCopy);
 	/* Must be MODE_PRE otherwise the event object won't be copied over. */
 	HookEvent("player_death", PlayerDeath, EventHookMode_Pre);
@@ -439,6 +439,12 @@ public Action ArenaRandomizerRunning(int client, int args)
 
 void SendContentHint()
 {
+	PrecacheSound(TF2_COUNTDOWN_5SECS);
+	PrecacheSound(TF2_COUNTDOWN_4SECS);
+	PrecacheSound(TF2_COUNTDOWN_3SECS);
+	PrecacheSound(TF2_COUNTDOWN_2SECS);
+	PrecacheSound(TF2_COUNTDOWN_1SECS);
+
 	PrecacheSound(PRE_ROUND_AUDIO);
 	PrecacheSound(SUDDEN_DEATH_AUDIO);
 	PrecacheSound(GAMEMODE_END_AUDIO);
@@ -534,7 +540,7 @@ public void ShowTextPrompt(const char[] strMessage, const char[] strIcon, const 
 	DispatchSpawn(iEntity);
 	AcceptEntityInput(iEntity, "Display", iEntity, iEntity);
 
-	GameTextHandle = CreateTimer(duration, KillGameText, iEntity);
+	GameTextHandle = CreateTimer(duration, KillGameText, iEntity, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action KillGameText(Handle hTimer, any iEntityRef)
@@ -1294,6 +1300,15 @@ void ArenaRound()
 
 	MC_PrintToChatAll("[{springgreen}ArenaRandomizer{white}] This round's loadout is '%s%s{white}'", 
 		(IsSpecialRound ? "{indianred}" : "{mediumblue}"), _name);
+
+	if (SuddenDeathTimer != INVALID_HANDLE)
+	{
+		ThrowError("[ArenaRandomizer] Sudden death already active? wtf");
+	}
+	else
+	{
+		SuddenDeathTimer = CreateTimer(90.0, TriggerSuddenDeath, _, TIMER_FLAG_NO_MAPCHANGE);
+	}
 }
 
 public void RoundEndAudio(Handle event, const char[] name, bool dontBroadcast)
@@ -1362,6 +1377,12 @@ public void RoundEndAlternate2(Handle event, const char[] name, bool dontBroadca
 
 void DoRoundEnd()
 {
+	/* Stop the sudden death timer. */
+	if (SuddenDeathTimer != INVALID_HANDLE)
+	{
+		delete SuddenDeathTimer;
+	}
+
 	bool IsMapEnd = HasMapEnded();
 
 	switch (WorkaroundMode)
@@ -1406,27 +1427,66 @@ void DoRoundEnd()
 	OnKillAudioList.Clear();
 }
 
-public Action ControlPointUnlocked(Event event, const char[] name, bool dontBroadcast)
+public Action TriggerSuddenDeath(Handle timer)
 {
-	if (!IsArenaRandomizer)
-	{
-		return Plugin_Continue;
-	}
-
-	/* TODO(rake): Check if this works on other maps. */
-	if (WorkaroundMode != NO_WORKAROUND)
-	{
-		return Plugin_Continue;
-	}
+	/* We've triggered the timer. Too late now. */
+	SuddenDeathTimer = INVALID_HANDLE;
 
 	/**
-	 * Make the duration nearly how long the audio clip is.
+	 * Sadly we can't integrate Arena's capture point
+	 * with Arena Randomizer, so roll out our own thing.
 	 */
-	CreateTimer(1.23, DoSuddenDeath);
+	CreateTimer(0.1, DoSuddenDeathPreAudio, 5, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(1.1, DoSuddenDeathPreAudio, 4, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(2.1, DoSuddenDeathPreAudio, 3, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(3.1, DoSuddenDeathPreAudio, 2, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(4.1, DoSuddenDeathPreAudio, 1, TIMER_FLAG_NO_MAPCHANGE);
 
-	EmitSoundToAll(SUDDEN_DEATH_AUDIO);
+	/* Play the sudden death sound. */
+	CreateTimer(5.1, DoSuddenDeathPreAudio, 0, TIMER_FLAG_NO_MAPCHANGE);
 
-	return Plugin_Continue;
+	/* Trigger sudden death once the voiceline has been played. */
+	CreateTimer(6.23, DoSuddenDeath, TIMER_FLAG_NO_MAPCHANGE);
+
+	return Plugin_Stop;
+}
+
+public Action DoSuddenDeathPreAudio(Handle timer, any _data)
+{
+	switch (view_as<int>(_data))
+	{
+		case 5:
+		{
+			EmitSoundToAll(TF2_COUNTDOWN_5SECS);
+		}
+
+		case 4:
+		{
+			EmitSoundToAll(TF2_COUNTDOWN_4SECS);
+		}
+
+		case 3:
+		{
+			EmitSoundToAll(TF2_COUNTDOWN_3SECS);
+		}
+
+		case 2:
+		{
+			EmitSoundToAll(TF2_COUNTDOWN_2SECS);
+		}
+
+		case 1:
+		{
+			EmitSoundToAll(TF2_COUNTDOWN_1SECS);
+		}
+
+		case 0:
+		{
+			EmitSoundToAll(SUDDEN_DEATH_AUDIO);
+		}
+	}
+
+	return Plugin_Stop;
 }
 
 public Action DoSuddenDeath(Handle timer)

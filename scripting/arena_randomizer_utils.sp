@@ -67,6 +67,12 @@
 #define GAMEMODE_END_AUDIO "hmmr/arena-randomizer/gamemode_end_rare.mp3"
 #define GAMEMODE_END_AUDIO_FULL "sound/hmmr/arena-randomizer/gamemode_end_rare.mp3"
 
+#define TF2_COUNTDOWN_5SECS "vo/announcer_ends_5sec.mp3"
+#define TF2_COUNTDOWN_4SECS "vo/announcer_ends_4sec.mp3"
+#define TF2_COUNTDOWN_3SECS "vo/announcer_ends_3sec.mp3"
+#define TF2_COUNTDOWN_2SECS "vo/announcer_ends_2sec.mp3"
+#define TF2_COUNTDOWN_1SECS "vo/announcer_ends_1sec.mp3"
+
 /* Misc. */
 #define ARENA_RANDOMIZER_ATTR "attributes"
 #define ARENA_RANDOMIZER_ATTR_PLAYER_HEALTH "hp"
