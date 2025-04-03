@@ -12,6 +12,7 @@
 
 #include <json>
 #include <files>
+#include <morecolors>
 
 #include <mallet>
 
@@ -59,6 +60,12 @@
 
 #define PRE_ROUND_AUDIO "hmmr/arena-randomizer/round_start.mp3"
 #define PRE_ROUND_AUDIO_FULL "sound/hmmr/arena-randomizer/round_start.mp3"
+
+#define SUDDEN_DEATH_AUDIO "hmmr/arena-randomizer/sudden_death.mp3"
+#define SUDDEN_DEATH_AUDIO_FULL "sound/hmmr/arena-randomizer/sudden_death.mp3"
+
+#define GAMEMODE_END_AUDIO "hmmr/arena-randomizer/gamemode_end_rare.mp3"
+#define GAMEMODE_END_AUDIO_FULL "sound/hmmr/arena-randomizer/gamemode_end_rare.mp3"
 
 /* Misc. */
 #define ARENA_RANDOMIZER_ATTR "attributes"
@@ -232,4 +239,45 @@ stock int GetAliveTeamCount(int team)
 			number++;
 	}
 	return number;
+}
+
+stock bool HasMapEnded()
+{
+	int timeLeft = -1;
+	
+	/**
+	 * We first need to fetch the map time limit, otherwise
+	 * everything will go horribly wrong.
+	 */
+	if (!GetMapTimeLimit(timeLeft))
+	{
+		return false;
+	}
+
+#if defined(DEBUG)
+	PrintToServer("[ArenaRandomizer::HasMapEnded] [DEBUG] { mapLimit=%d }", timeLeft);
+#endif
+
+	/**
+	 * If we don't have a map time limit, we're either:
+	 * - Without one.
+	 * - Have the server in hibernation.
+	 */
+	if (timeLeft <= 0)
+	{
+		return false;
+	}
+
+	/**
+	 * Now finally get the remaining map time.
+	 */
+	if (!GetMapTimeLeft(timeLeft))
+	{
+		return false;
+	}
+
+#if defined(DEBUG)
+	PrintToServer("[ArenaRandomizer::HasMapEnded] [DEBUG] { timeLeft=%d }", timeLeft);
+#endif
+	return timeLeft < 15;	
 }

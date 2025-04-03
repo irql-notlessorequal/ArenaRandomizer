@@ -32,7 +32,7 @@ public Plugin myinfo =
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "0.0.38",
+	version = "0.0.41",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -336,6 +336,7 @@ public void OnPluginStart()
 	HookEvent("teamplay_setup_finished", RoundStartAlternate, EventHookMode_PostNoCopy);
 	HookEvent("arena_win_panel", RoundEndAudio, EventHookMode_PostNoCopy);
 	HookEvent("teamplay_point_locked", RoundEndAlternate, EventHookMode_Post);
+	HookEvent("teamplay_point_unlocked", ControlPointUnlocked, EventHookMode_PostNoCopy);
 	HookEvent("teamplay_win_panel", RoundEndAlternate2, EventHookMode_PostNoCopy);
 	/* Must be MODE_PRE otherwise the event object won't be copied over. */
 	HookEvent("player_death", PlayerDeath, EventHookMode_Pre);
@@ -439,6 +440,8 @@ public Action ArenaRandomizerRunning(int client, int args)
 void SendContentHint()
 {
 	PrecacheSound(PRE_ROUND_AUDIO);
+	PrecacheSound(SUDDEN_DEATH_AUDIO);
+	PrecacheSound(GAMEMODE_END_AUDIO);
 
 	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
 	{
@@ -467,6 +470,8 @@ void SendContentHint()
 	}
 
 	AddFileToDownloadsTable(PRE_ROUND_AUDIO_FULL);
+	AddFileToDownloadsTable(SUDDEN_DEATH_AUDIO_FULL);
+	AddFileToDownloadsTable(GAMEMODE_END_AUDIO_FULL);
 
 	if (CustomAssets != null)
 	{
@@ -595,7 +600,6 @@ public void RemoveAllWeaponsAll()
 			RemoveAllWeapons(i);
 		}
 	}
-	
 }
 
 public void SetWeaponAmmoAll(int slot1, int slot2) {
@@ -974,7 +978,12 @@ void ArenaRound()
 			RemoveAllWeaponsAll();
 		}
 
-		for (int weaponIdx = 0; weaponIdx < weapons.Length; weaponIdx++)
+		/**
+		 * Iterate in reverse since we'll be equipping these weapons,
+		 * and we want the first entries to be equipped on the player
+		 * as the round starts.
+		 */
+		for (int weaponIdx = (weapons.Length - 1); weaponIdx >= 0; weaponIdx--)
 		{
 			JSON_Object weapon = weapons.GetObject(weaponIdx);
 
@@ -1257,6 +1266,7 @@ void ArenaRound()
 	}
 
 	bool IsSpecialRound = entry.GetBool("special_round");
+
 	ShowTextPrompt(_name, IsSpecialRound ? SPECIAL_ROUND_UI_ICON : DEFAULT_UI_ICON, 14.92);
 
 	if (JSON_CONTAINS_KEY(entry, "special_round_code"))
@@ -1282,7 +1292,8 @@ void ArenaRound()
 		}
 	}
 
-	PrintToChatAll("[ArenaRandomizer] This round's loadout is '%s'", _name);
+	MC_PrintToChatAll("[{springgreen}ArenaRandomizer{white}] This round's loadout is '%s%s{white}'", 
+		(IsSpecialRound ? "{indianred}" : "{mediumblue}"), _name);
 }
 
 public void RoundEndAudio(Handle event, const char[] name, bool dontBroadcast)
@@ -1351,6 +1362,8 @@ public void RoundEndAlternate2(Handle event, const char[] name, bool dontBroadca
 
 void DoRoundEnd()
 {
+	bool IsMapEnd = HasMapEnded();
+
 	switch (WorkaroundMode)
 	{
 		/* Reset all attributes now, so anything won't explode next round. */
@@ -1358,13 +1371,31 @@ void DoRoundEnd()
 		{
 			CreateTimer(1.00, ResetAllAttributes, _);
 
-			CreateTimer(5.00, PlayRoundEndClip, _);			
+			if (IsMapEnd)
+			{
+				ThrowError("TODO");
+			}
+			else
+			{
+				CreateTimer(5.00, PlayRoundEndClip, _);				
+			}
 		}
 		default:
 		{
 			CreateTimer(10.00, ResetAllAttributes, _);
 
-			CreateTimer(14.92, PlayRoundEndClip, _);
+			if (IsMapEnd)
+			{
+				/**
+				 * 6.82 is also fine but at least let the
+				 * tune go silent.
+				 */
+				CreateTimer(6.80, PlayGamemodeEndClip, _);
+			}
+			else
+			{
+				CreateTimer(14.92, PlayRoundEndClip, _);				
+			}
 		}
 	}
 
@@ -1373,6 +1404,46 @@ void DoRoundEnd()
 
 	/* Clear the kill audio queue. */
 	OnKillAudioList.Clear();
+}
+
+public Action ControlPointUnlocked(Event event, const char[] name, bool dontBroadcast)
+{
+	if (!IsArenaRandomizer)
+	{
+		return Plugin_Continue;
+	}
+
+	/* TODO(rake): Check if this works on other maps. */
+	if (WorkaroundMode != NO_WORKAROUND)
+	{
+		return Plugin_Continue;
+	}
+
+	/**
+	 * Make the duration nearly how long the audio clip is.
+	 */
+	CreateTimer(1.23, DoSuddenDeath);
+
+	EmitSoundToAll(SUDDEN_DEATH_AUDIO);
+
+	return Plugin_Continue;
+}
+
+public Action DoSuddenDeath(Handle timer)
+{
+	for (int client = 1; client < MaxClients; client++)
+	{
+		if (IsClientInGame(client) && IsPlayerAlive(client))
+		{
+			TF2_AddCondition(client, TFCond_MarkedForDeath, TFCondDuration_Infinite);
+		}
+	}
+
+	/**
+	 * TODO(rake): Setup player health drain.
+	 */
+
+	return Plugin_Stop;
 }
 
 public Action ResetAllAttributes(Handle timer)
@@ -1397,6 +1468,15 @@ public Action ResetAllAttributes(Handle timer)
 		}
 	}
 
+	return Plugin_Stop;
+}
+
+public Action PlayGamemodeEndClip(Handle timer)
+{
+	/** 
+	 * TODO(rake): Make this a 2 in 100 chance.
+	 */
+	EmitSoundToAll(GAMEMODE_END_AUDIO);
 	return Plugin_Stop;
 }
 

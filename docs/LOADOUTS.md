@@ -73,6 +73,9 @@ Special values for `all`:
 
 TODO
 
+**REMINDER**: This array will be iterated in reverse, so the first entry will be what the player
+has equipped by default.
+
 ### `attributes`
 
 TODO
