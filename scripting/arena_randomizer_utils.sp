@@ -76,12 +76,16 @@
 /* Misc. */
 #define ARENA_RANDOMIZER_ATTR "attributes"
 #define ARENA_RANDOMIZER_ATTR_PLAYER_HEALTH "hp"
+#define ARENA_RANDOMIZER_ATTR_MAX_PLAYER_HEALTH "max_hp"
 
 #define FILE_LOCATION "cfg/hmmr/arena-randomizer/loadouts.json"
 #define FILE_MAX_SIZE (1 * 1024 * 1024)
 
 #define DEFAULT_UI_ICON "leaderboard_dominated"
 #define SPECIAL_ROUND_UI_ICON "leaderboard_streak"
+
+#define HH_KILL_FLAMETHROWER "flamethrower"
+#define HH_KILL_EXPLOSION "env_explosion"
 
 #define DAMAGE_CUSTOM_TYPE_BLEED 34
 #endif
@@ -91,7 +95,8 @@ enum ArenaRandomizerSpecialRoundLogic
 	DISABLED = 0,
 	GENEVA_SUGGESTION = 1,
 	BLEED_FOR_EIGHT_SECONDS = 2,
-	CLASS_WARFARE_LIKE = 3
+	CLASS_WARFARE_LIKE = 3,
+	HUNTSMAN_HELL = 4,
 };
 
 enum ArenaRandomizerWorkaroundMethod
@@ -161,6 +166,27 @@ stock void SetHealthForAll(int health)
 		if (IsClientInGame(i) && IsPlayerAlive(i))
 		{
 			SetEntityHealth(i, health);
+		}
+	}
+}
+
+#define TF2_ATTRIBUTE_POSITIVE_MAX_HEALTH 26
+#define TF2_ATTRIBUTE_NEGATIVE_MAX_HEALTH 125
+
+stock void SetMaxHealthForAll(int health)
+{
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
+			if (health)
+			{
+				MalletSetAttribute(i, TF2_ATTRIBUTE_POSITIVE_MAX_HEALTH, float(health));
+			}
+			else
+			{
+				MalletSetAttribute(i, TF2_ATTRIBUTE_NEGATIVE_MAX_HEALTH, float(health));
+			}
 		}
 	}
 }
@@ -286,4 +312,73 @@ stock bool HasMapEnded()
 	PrintToServer("[ArenaRandomizer::HasMapEnded] [DEBUG] { timeLeft=%d }", timeLeft);
 #endif
 	return timeLeft < 15;	
+}
+
+stock void String_Trim(const char[] str, char[] output, size, const char[] chars=" \t\r\n")
+{
+	int x = 0;
+	while (str[x] != '\0' && FindCharInString(chars, str[x]) != -1)
+	{
+		x++;
+	}
+
+	x = strcopy(output, size, str[x]);
+	x--;
+
+	while (x >= 0 && FindCharInString(chars, output[x]) != -1)
+	{
+		x--;
+	}
+
+	output[++x] = '\0';
+}
+
+stock int HolidayFromString(const char trueHoliday[32])
+{
+	if (strcmp(trueHoliday, "christmas") == 0)
+	{
+		return kHoliday_Christmas;
+	}
+	else if (strcmp(trueHoliday, "halloween") == 0)
+	{
+		return kHoliday_Halloween;
+	}
+	else if (strcmp(trueHoliday, "full_moon") == 0)
+	{
+		return kHoliday_FullMoon;
+	}
+	else if (strcmp(trueHoliday, "april_fools") == 0)
+	{
+		return kHoliday_AprilFools;
+	}
+	else
+	{
+		ThrowError("Unknown holiday encountered");
+		return -1;
+	}
+}
+
+stock bool IsHolidayConditionMet(const char holiday[32])
+{
+	bool isNegated = (holiday[0] == '!');
+
+	char trueHoliday[32];
+	if (isNegated)
+	{
+		String_Trim(holiday, trueHoliday, sizeof (holiday), "!");
+	}
+	else
+	{
+		trueHoliday = holiday;
+	}
+
+	bool value = view_as<bool>(MalletIsHolidayActive(HolidayFromString(trueHoliday)));
+	if (isNegated)
+	{
+		return !value;
+	}
+	else
+	{
+		return value;
+	}
 }

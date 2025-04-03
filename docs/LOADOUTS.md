@@ -22,6 +22,7 @@ The `loadouts.json` contains all the loadout rounds in Arena Randomizer.
 			"slot": [string] (mandatory)
 
 			"team": [string] (optional)
+			"holiday": [string] (optional)
 
 			"ammo_clip": [integer] (optional)
 			"ammo_reserve": [integer] (optional)
@@ -40,6 +41,7 @@ The `loadouts.json` contains all the loadout rounds in Arena Randomizer.
 		"round_end_audio": [array/string] (optional)
 		"on_kill": [array/string] (optional)
 		"hp": [integer] (optional)
+		"max_hp": [integer] (optional)
 	},
 	"special_round": [boolean] (optional)
 }
@@ -84,3 +86,17 @@ TODO
 
 *boolean* flag to indicate that this is a non-standard round, if set
 different audio and UI indicators will be used at the start of the round.
+
+## Holidays
+
+The following holidays are supported:
+
+- `none` (No holiday present)
+- `halloween` (Halloween)
+- `christmas` (Christmas)
+- `full_moon` (Full Moon)
+- `april_fools` (April Fools)
+
+You can add `!` in front of a holiday to negate the condition.
+
+For example, `!christmas` will be _TRUE_ if it is **NOT** Christmas.

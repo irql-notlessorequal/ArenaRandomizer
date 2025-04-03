@@ -1361,6 +1361,49 @@
 	},
 	{
 		"classes": {
+			"all": "sniper"
+		},
+		"weapons": [
+			{
+				"id": 56,
+				"name": "tf_weapon_compound_bow",
+				"slot": "primary",
+				"holiday": "!christmas"
+			},
+			{
+				"id": 1005,
+				"name": "tf_weapon_compound_bow",
+				"slot": "primary",
+				"holiday": "christmas"				
+			},
+			{
+				"id": 58,
+				"name": "tf_weapon_jar",
+				"slot": "secondary",
+				"holiday": "!christmas"
+			},
+			{
+				"id": 1083,
+				"name": "tf_weapon_jar",
+				"slot": "secondary",
+				"holiday": "christmas"
+			},
+			{
+				"id": 232,
+				"name": "tf_weapon_club",
+				"slot": "melee"
+			}
+		],
+		"attributes": {
+			"hp": 400,
+			"max_hp": 275
+		},
+		"special_round": true,
+		"special_round_code": 4,
+		"name": "Huntsman Hell"
+	},
+	{
+		"classes": {
 			"red": "random-shared",
 			"blue": "random-shared"
 		},
@@ -1495,7 +1538,7 @@
 					{
 						"id": 874,
 						"name": "mult_item_meter_charge_rate",
-						"value": 0.6
+						"value": 0.5
 					},
 					{
 						"id": 6,

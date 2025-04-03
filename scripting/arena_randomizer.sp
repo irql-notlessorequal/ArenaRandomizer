@@ -36,6 +36,8 @@ public Plugin myinfo =
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
+static int HH_ExplodeDamage = 50;
+static int HH_ExplodeRadius = 200;
 /**
  * 0 = Unavailable.
  * 1 = Map Chooser (internal plugin)
@@ -999,6 +1001,24 @@ void ArenaRound()
 				return;
 			}
 
+			if (JSON_CONTAINS_KEY(weapon, "holiday"))
+			{
+				char holiday[32];
+				if (!weapon.GetString("holiday", holiday, sizeof(holiday)))
+				{
+					SetFailState("ArenaRound: Invalid formatted data object, 'holiday' is misconfigured.");
+					return;
+				}
+
+				if (!IsHolidayConditionMet(holiday))
+				{
+					/**
+					 * Skip this weapon if the condition isn't met.
+					 */
+					continue;
+				}
+			}
+
 			char weaponName[64];
 			if (!weapon.GetString("name", weaponName, sizeof(weaponName)))
 			{
@@ -1158,6 +1178,19 @@ void ArenaRound()
 	{
 		JSON_Object attributes = entry.GetObject(ARENA_RANDOMIZER_ATTR);
 
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_MAX_PLAYER_HEALTH))
+		{
+			int health = attributes.GetInt(ARENA_RANDOMIZER_ATTR_MAX_PLAYER_HEALTH);
+
+			if (health == -1)
+			{
+				SetFailState("ArenaRound: Invalid formatted data object, 'attributes' had an invalid HP value.");
+				return;
+			}
+
+			SetMaxHealthForAll(health);
+		}
+
 		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_PLAYER_HEALTH))
 		{
 			int health = attributes.GetInt(ARENA_RANDOMIZER_ATTR_PLAYER_HEALTH);
@@ -1307,7 +1340,7 @@ void ArenaRound()
 	}
 	else
 	{
-		SuddenDeathTimer = CreateTimer(90.0, TriggerSuddenDeath, _, TIMER_FLAG_NO_MAPCHANGE);
+		SuddenDeathTimer = CreateTimer(120.0, TriggerSuddenDeath, _, TIMER_FLAG_NO_MAPCHANGE);
 	}
 }
 
@@ -1347,7 +1380,7 @@ public void RoundEndAlternate(Handle event, const char[] name, bool dontBroadcas
 
 	int team = GetEventInt(event, "team", -1);
 
-	PrintToServer("[ArenaRandomizer:RoundEndAlternate] [DEBUG] team=%d, remainingBlue=%d, remainingRed=%d, killBasedWin=%d",
+	PrintToServer("[ArenaRandomizer::RoundEndAlternate] [DEBUG] team=%d, remainingBlue=%d, remainingRed=%d, killBasedWin=%d",
 		team, remainingBlue, remainingRed, killBasedWin);
 
 	if (team == -1)
@@ -1526,6 +1559,11 @@ public Action ResetAllAttributes(Handle timer)
 
 			MalletDeleteAllAttributes(entity);
 		}
+
+		/**
+		 * Also do it on the client.
+		 */
+		MalletDeleteAllAttributes(client);
 	}
 
 	return Plugin_Stop;
@@ -1563,37 +1601,64 @@ public Action PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 	}
 
-	if (OnKillAudioList.Length == 0)
+	if (SpecialRoundLogic == HUNTSMAN_HELL)
 	{
-		return Plugin_Continue;
-	}
+		int victim = GetEventInt(event, "victim_entindex");
+		int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
+	
+		char weapon[64];
+		GetEventString(event, "weapon", weapon, sizeof(weapon));
 
-	int idx = GetRandomInt(0, OnKillAudioList.Length - 1);
-	char path[PLATFORM_MAX_PATH];
-
-	if (!OnKillAudioList.GetString(idx, path, PLATFORM_MAX_PATH))
-	{
-		return Plugin_Continue;
-	}
-
-	if (SpecialRoundLogic == BLEED_FOR_EIGHT_SECONDS)
-	{
-		/* Place the funnies at the point of death. */
-		float position[3];
-
-		/* Get the position of the victim, since the attacker position isn't always available. */
-		int entity = GetClientOfUserId(GetEventInt(event, "userid"));
-		if (entity)
+		if (StrEqual(weapon, HH_KILL_FLAMETHROWER) && attacker != victim)
 		{
-			GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
+			SetEventString(event, "weapon", "huntsman");
+			SetEventInt(event, "damagebits", (GetEventInt(event, "damagebits") & DMG_CRIT) | DMG_BURN | DMG_PREVENT_PHYSICS_FORCE);
+			SetEventInt(event, "customkill", TF_CUSTOM_BURNING_ARROW);
 		}
 
-		/* SNDLEVEL_RAIDSIREN should cover the majority of the map? */
-		EmitSoundToAll(.sample = path, .entity = SOUND_FROM_WORLD, .level = SNDLEVEL_RAIDSIREN, .origin = position);
+		if (StrEqual(weapon, HH_KILL_EXPLOSION))
+		{
+			SetEventString(event, "weapon", "tf_pumpkin_bomb");
+			SetEventInt(event, "damagebits", (GetEventInt(event, "damagebits") & DMG_CRIT) | DMG_BLAST | DMG_RADIATION | DMG_POISON);
+			SetEventInt(event, "customkill", TF_CUSTOM_PUMPKIN_BOMB);
+		}
+	
+		return Plugin_Continue;
 	}
 	else
 	{
-		EmitSoundToAll(path);
+		if (OnKillAudioList.Length == 0)
+		{
+			return Plugin_Continue;
+		}
+
+		int idx = GetRandomInt(0, OnKillAudioList.Length - 1);
+		char path[PLATFORM_MAX_PATH];
+
+		if (!OnKillAudioList.GetString(idx, path, PLATFORM_MAX_PATH))
+		{
+			return Plugin_Continue;
+		}
+
+		if (SpecialRoundLogic == BLEED_FOR_EIGHT_SECONDS)
+		{
+			/* Place the funnies at the point of death. */
+			float position[3];
+
+			/* Get the position of the victim, since the attacker position isn't always available. */
+			int entity = GetClientOfUserId(GetEventInt(event, "userid"));
+			if (entity)
+			{
+				GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
+			}
+
+			/* SNDLEVEL_RAIDSIREN should cover the majority of the map? */
+			EmitSoundToAll(.sample = path, .entity = SOUND_FROM_WORLD, .level = SNDLEVEL_RAIDSIREN, .origin = position);
+		}
+		else
+		{
+			EmitSoundToAll(path);
+		}
 	}
 	
 	return Plugin_Continue;
@@ -1616,22 +1681,37 @@ public Action OnTakeDamageAlive(int victim, int &attacker, int &inflictor, float
 		return Plugin_Continue;
 	}
 
-	if (SpecialRoundLogic != BLEED_FOR_EIGHT_SECONDS)
+	if (SpecialRoundLogic == BLEED_FOR_EIGHT_SECONDS)
 	{
-		return Plugin_Continue;
+		/* TODO(rake): Allow fall damage and trigger_death as well. */
+
+		/* Only allow bleed to be issued. */
+		if (damagecustom == DAMAGE_CUSTOM_TYPE_BLEED)
+		{
+			return Plugin_Continue;
+		}
+
+		damage = 0.0;
+		TF2_MakeBleed(victim, attacker, 8.0);
+	}
+	else if (SpecialRoundLogic == HUNTSMAN_HELL)
+	{
+		char classname[64];
+		if (GetEntityClassname(inflictor, classname, sizeof(classname)) && StrEqual(classname, "env_explosion"))
+		{
+			int attackerTeam = GetClientTeam(attacker);
+			int victimTeam = GetClientTeam(victim);
+
+			if (victim != attacker && attackerTeam == victimTeam)
+			{
+				return Plugin_Continue;
+			}
+
+			TF2_IgnitePlayer(victim, attacker);
+		}
 	}
 
-	/* TODO(rake): Allow fall damage and trigger_death as well. */
-
-	/* Only allow bleed to be issued. */
-	if (damagecustom == DAMAGE_CUSTOM_TYPE_BLEED)
-	{
-		return Plugin_Continue;
-	}
-
-	damage = 0.0;
-	TF2_MakeBleed(victim, attacker, 8.0);
-	return Plugin_Changed;
+	return Plugin_Continue;
 }
 
 public void TF2_OnConditionAdded(int client, TFCond condition)
@@ -1652,4 +1732,64 @@ public void TF2_OnConditionAdded(int client, TFCond condition)
 	{
 		TF2_MakeBleed(client, client, 8.0);
 	}
+}
+
+public void OnEntityCreated(int entity, const char[] classname)
+{
+	if (!IsArenaRandomizer)
+	{
+		return;
+	}
+
+	if (SpecialRoundLogic != HUNTSMAN_HELL)
+	{
+		return;
+	}
+
+	if (!StrEqual(classname, "tf_projectile_arrow"))
+	{
+		return;
+	}
+
+	SDKHook(entity, SDKHook_StartTouchPost, HH_Arrow_Explode);
+}
+
+/**
+ * Logic taken directly from Huntsman Hell 1.x
+ * Created by Powerlord.
+ * 
+ * https://github.com/powerlord/sourcemod-huntsman-hell
+ */
+void HH_Arrow_Explode(int entity, int other)
+{
+	float origin[3];
+	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
+	
+	int owner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
+	int team = GetEntProp(entity, Prop_Send, "m_iTeamNum");
+	
+	int explosion = CreateEntityByName("env_explosion");
+	if (!IsValidEntity(explosion))
+	{
+		return;
+	}
+	
+	char teamString[2];
+	char magnitudeString[6];
+	char radiusString[5];
+	IntToString(team, teamString, sizeof(teamString));
+	
+	IntToString(HH_ExplodeDamage, magnitudeString, sizeof (magnitudeString));
+	IntToString(HH_ExplodeRadius, radiusString, sizeof (radiusString));
+	
+	DispatchKeyValue(explosion, "iMagnitude", magnitudeString);
+	DispatchKeyValue(explosion, "iRadiusOverride", radiusString);
+	DispatchKeyValue(explosion, "TeamNum", teamString);
+	
+	SetEntPropEnt(explosion, Prop_Data, "m_hOwnerEntity", owner);
+	
+	TeleportEntity(explosion, origin, NULL_VECTOR, NULL_VECTOR);
+	DispatchSpawn(explosion);
+	
+	AcceptEntityInput(explosion, "Explode");
 }
