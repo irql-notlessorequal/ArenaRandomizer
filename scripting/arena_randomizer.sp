@@ -1,8 +1,5 @@
 #include "arena_randomizer_utils.sp"
 
-/* SourcePawn is the special needs child of switch/break statements, make my life easier with this macro. */
-#define SP_BREAK
-
 #pragma semicolon 1
 #pragma newdecls required
 #pragma dynamic 65536
@@ -32,7 +29,7 @@ public Plugin myinfo =
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "0.0.41",
+	version = "0.0.46",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -51,6 +48,7 @@ static ArrayList CustomAssets;
 static ArrayStack EndRoundAudioQueue;
 static ArrayList OnKillAudioList;
 static Handle SuddenDeathTimer = INVALID_HANDLE;
+static Handle SuddenDeathDrainTimer = INVALID_HANDLE;
 
 Handle GameTextHandle = INVALID_HANDLE;
 Handle CON_VAR_ARENA_USE_QUEUE = INVALID_HANDLE;
@@ -142,8 +140,6 @@ bool PreProcessJsonData()
 					}
 
 					CustomAssets.PushString(string);
-
-					SP_BREAK
 				}
 
 				case JSON_Type_Object:
@@ -174,8 +170,6 @@ bool PreProcessJsonData()
 						
 						CustomAssets.PushString(string2);
 					}
-
-					SP_BREAK
 				}
 
 				default:
@@ -203,8 +197,6 @@ bool PreProcessJsonData()
 					}
 
 					CustomAssets.PushString(string);
-
-					SP_BREAK
 				}
 
 				case JSON_Type_Object:
@@ -234,8 +226,6 @@ bool PreProcessJsonData()
 
 						CustomAssets.PushString(string2);
 					}
-
-					SP_BREAK
 				}
 
 				default:
@@ -263,8 +253,6 @@ bool PreProcessJsonData()
 					}
 
 					CustomAssets.PushString(string);
-
-					SP_BREAK
 				}
 
 				case JSON_Type_Object:
@@ -294,8 +282,6 @@ bool PreProcessJsonData()
 
 						CustomAssets.PushString(string2);
 					}
-
-					SP_BREAK
 				}
 
 				default:
@@ -1416,6 +1402,12 @@ void DoRoundEnd()
 		delete SuddenDeathTimer;
 	}
 
+	/* Stop draining health from players. */
+	if (SuddenDeathDrainTimer != INVALID_HANDLE)
+	{
+		delete SuddenDeathDrainTimer;
+	}
+
 	bool IsMapEnd = HasMapEnded();
 
 	switch (WorkaroundMode)
@@ -1533,10 +1525,25 @@ public Action DoSuddenDeath(Handle timer)
 	}
 
 	/**
-	 * TODO(rake): Setup player health drain.
+	 * Drain the players health during Sudden Death so
+	 * that the round ends quicker.
 	 */
+	if (SuddenDeathDrainTimer != INVALID_HANDLE)
+	{
+		ThrowError("[ArenaRandomizer] SuddenDeathDrainTimer is non-NULL?");
+	}
+	else
+	{
+		SuddenDeathDrainTimer = CreateTimer(1.0, DoSuddenDeathHealthDrain, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	}
 
 	return Plugin_Stop;
+}
+
+public Action DoSuddenDeathHealthDrain(Handle timer)
+{
+	/* TODO() */
+	return Plugin_Continue;
 }
 
 public Action ResetAllAttributes(Handle timer)

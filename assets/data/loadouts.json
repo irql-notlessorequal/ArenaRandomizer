@@ -347,15 +347,7 @@
 			{
 				"id": 11,
 				"name": "tf_weapon_shotgun_hwg",
-				"slot": "primary",
-
-				"attributes": [
-					{
-						"id": 26,
-						"name": "add_maxhealth",
-						"value": 650
-					}
-				]
+				"slot": "primary"
 			},
 			{
 				"id": 159,
@@ -369,7 +361,8 @@
 			}
 		],
 		"attributes": {
-			"hp": 1000
+			"hp": 1000,
+			"max_hp": 650
 		},
 		"name": "Fat Scouts"
 	},
@@ -1409,6 +1402,7 @@
 		},
 		"keep_weapons": true,
 		"special_round": true,
+		"special_round_code": 3,
 		"name": "What Gamemode Am I Playing Again?"
 	},
 	{

@@ -351,6 +351,10 @@ stock int HolidayFromString(const char trueHoliday[32])
 	{
 		return kHoliday_AprilFools;
 	}
+	else if (strcmp(trueHoliday, "none") == 0)
+	{
+		return kHoliday_None;
+	}
 	else
 	{
 		ThrowError("Unknown holiday encountered");
