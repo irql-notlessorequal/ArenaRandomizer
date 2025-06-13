@@ -29,7 +29,7 @@ public Plugin myinfo =
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "0.0.51",
+	version = "0.0.52",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -544,8 +544,10 @@ public Action KillGameText(Handle hTimer, any iEntityRef)
 
 bool __CONVERT_TO_COMPATIBLE_TYPE(const JSON_Object attribute, const char[] name, const JSONCellType ct, float &ret)
 {
-	switch (ct) {
-		case JSON_Type_Int: {
+	switch (ct)
+	{
+		case JSON_Type_Int:
+		{
 			int _val;
 			if (!attribute.GetValue(name, _val))
 			{
@@ -558,16 +560,19 @@ bool __CONVERT_TO_COMPATIBLE_TYPE(const JSON_Object attribute, const char[] name
 				return true;
 			}
 		}
-		case JSON_Type_Float: {
+		case JSON_Type_Float:
+		{
 			ret = attribute.GetFloat(name);
 			return true;
 		}
-		case JSON_Type_Bool: {
+		case JSON_Type_Bool:
+		{
 			bool _temp = attribute.GetBool(name);
 			ret = _temp ? 1.0 : 0.0;
 			return true;
 		}
-		default: {
+		default:
+		{
 			PrintToServer("[hmmr/weapon_attribute_adapter] __CONVERT_TO_COMPATIBLE_TYPE: Unknown type: %i", ct);
 			return false;
 		}
@@ -1199,6 +1204,32 @@ void ArenaRound()
 			SetupAmmoRegen(ammo);
 		}
 
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_MOVEMENT_SPEED))
+		{
+			float movementSpeed = attributes.GetFloat(ARENA_RANDOMIZER_ATTR_MOVEMENT_SPEED);
+
+			if (movementSpeed == -1.0)
+			{
+				SetFailState("ArenaRound: Invalid formatted data object, 'attributes' had an invalid movement speed value.");
+				return;							
+			}
+
+			SetMovementSpeedForAll(movementSpeed);
+		}
+
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_MODEL_SCALE))
+		{
+			float modelScale = attributes.GetFloat(ARENA_RANDOMIZER_ATTR_MODEL_SCALE, 0.0);
+
+			if (modelScale <= 0.0)
+			{
+				SetFailState("ArenaRound: Invalid formatted data object, 'attributes' had an invalid model scale value.");
+				return;							
+			}
+
+			SetModelScaleForAll(modelScale);
+		}
+
 		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_ROUND_START))
 		{
 			JSON_Object roundStart = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_START);
@@ -1334,7 +1365,10 @@ void ArenaRound()
 				 */
 				for (int client = 1; client <= MaxClients; client++)
 				{
-					TF2_AddCondition(client, view_as<TFCond>(condition), duration);
+					if (IsClientInGame(client) && IsPlayerAlive(client))
+					{
+						TF2_AddCondition(client, view_as<TFCond>(condition), duration);
+					}
 				}
 			}
 		}
@@ -1600,7 +1634,14 @@ public Action DoSuddenDeath(Handle timer)
 
 public Action DoSuddenDeathHealthDrain(Handle timer)
 {
-	/* TODO() */
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && IsPlayerAlive(client))
+		{
+			HurtEntity(client, 1.0, _, DMG_GENERIC);
+		}
+	}
+
 	return Plugin_Continue;
 }
 

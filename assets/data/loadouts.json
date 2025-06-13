@@ -1306,7 +1306,7 @@
 		"attributes": {
 			"hp": 1000
 		},
-		"name": "Ferret Manoeuvres"
+		"name": "Ferret Maneuvers"
 	},
 	{
 		"classes": {
@@ -1351,6 +1351,29 @@
 			}
 		],
 		"name": "Demo Train"
+	},
+	{
+		"classes": {
+			"all": "heavy"
+		},
+		"weapons": [
+			{
+				"id": 656,
+				"name": "tf_weapon_fists",
+				"slot": "melee"
+			}
+		],
+		"attributes": {
+			"movement_speed": 1.5,
+			"model_scale": 0.65,
+			"conditions": [
+				{
+					"id": 11,
+					"duration": -1.0
+				}
+			]
+		},
+		"name": "Heavy Mittens"
 	},
 	{
 		"classes": {

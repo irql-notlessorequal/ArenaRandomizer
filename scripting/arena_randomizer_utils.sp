@@ -79,6 +79,8 @@
 #define ARENA_RANDOMIZER_ATTR_MAX_PLAYER_HEALTH "max_hp"
 #define ARENA_RANDOMIZER_ATTR_AMMO_REGENERATION "ammo_regen"
 #define ARENA_RANDOMIZER_ATTR_CONDITIONS "conditions"
+#define ARENA_RANDOMIZER_ATTR_MOVEMENT_SPEED "movement_speed"
+#define ARENA_RANDOMIZER_ATTR_MODEL_SCALE "model_scale"
 
 #define FILE_LOCATION "cfg/hmmr/arena-randomizer/loadouts.json"
 #define FILE_MAX_SIZE (1 * 1024 * 1024)
@@ -91,6 +93,7 @@
 
 #define DAMAGE_CUSTOM_TYPE_BLEED 34
 
+#define TF2_ATTRIBUTE_MOVEMENT_SPEED_BOOST 107
 #define TF2_ATTRIBUTE_POSITIVE_MAX_HEALTH 26
 #define TF2_ATTRIBUTE_NEGATIVE_MAX_HEALTH 125
 #endif
@@ -193,6 +196,28 @@ stock void SetMaxHealthForAll(int health)
 				 */
 				MalletSetAttribute(i, TF2_ATTRIBUTE_NEGATIVE_MAX_HEALTH, float(-health));
 			}
+		}
+	}
+}
+
+stock void SetMovementSpeedForAll(float value)
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && IsPlayerAlive(client))
+		{
+			MalletSetAttribute(client, TF2_ATTRIBUTE_MOVEMENT_SPEED_BOOST, value);
+		}
+	}
+}
+
+stock void SetModelScaleForAll(float scale)
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && IsPlayerAlive(client))
+		{
+			SetEntPropFloat(client, Prop_Send, "m_flModelScale", scale);
 		}
 	}
 }
@@ -440,4 +465,90 @@ stock bool IsHolidayConditionMet(const char holiday[32])
 	{
 		return value;
 	}
+}
+
+stock int Entity_GetTargetName(int entity, char[] buffer, int size)
+{
+	return GetEntPropString(entity, Prop_Data, "m_target", buffer, size);
+}
+
+stock bool Entity_SetClassName(int entity, const char[] className)
+{
+	return DispatchKeyValue(entity, "classname", className);
+}
+
+stock bool Entity_SetName(int entity, const char[] name, any ...)
+{
+	char format[128];
+	VFormat(format, sizeof(format), name, 3);
+	
+	return DispatchKeyValue(entity, "targetname", format);
+}
+
+static void Entity_PointHurtAtTarget(int entity, int target, const char[] name = "")
+{
+	char targetName[128];
+	Entity_GetTargetName(entity, targetName, sizeof(targetName));
+	
+	if (name[0] == '\0')
+	{
+		if (targetName[0] == '\0')
+		{
+			/**
+			 * Let's generate our own name
+			 */
+			Format(
+				targetName,
+				sizeof(targetName),
+				"_smlib_Entity_PointHurtAtTarget:%d",
+				target
+			);
+		}
+	}
+	else
+	{
+		strcopy(targetName, sizeof(targetName), name);
+	}
+	
+	DispatchKeyValue(entity, "DamageTarget", targetName);
+
+	Entity_SetName(target, targetName);
+}
+
+stock bool HurtEntity(int entity, float damage, int attacker=0, int damageType=DMG_GENERIC, const char[] fakeClassName="")
+{
+	static int point_hurt = INVALID_ENT_REFERENCE;
+	
+	if (point_hurt == INVALID_ENT_REFERENCE || !IsValidEntity(point_hurt))
+	{
+		point_hurt = EntIndexToEntRef(CreateEntityByName("point_hurt"));
+		
+		if (point_hurt == INVALID_ENT_REFERENCE)
+		{
+			return false;
+		}
+		
+		DispatchSpawn(point_hurt);
+	}
+	
+	AcceptEntityInput(point_hurt, "TurnOn");
+	SetEntProp(point_hurt, Prop_Data, "m_nDamage", damage);
+	SetEntProp(point_hurt, Prop_Data, "m_bitsDamageType", damageType);
+
+	Entity_PointHurtAtTarget(point_hurt, entity);
+	
+	if (fakeClassName[0] != '\0')
+	{
+		Entity_SetClassName(point_hurt, fakeClassName);
+	}
+	
+	AcceptEntityInput(point_hurt, "Hurt", attacker);
+	AcceptEntityInput(point_hurt, "TurnOff");
+	
+	if (fakeClassName[0] != '\0')
+	{
+		Entity_SetClassName(point_hurt, "point_hurt");
+	}
+	
+	return true;
 }
