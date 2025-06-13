@@ -77,6 +77,8 @@
 #define ARENA_RANDOMIZER_ATTR "attributes"
 #define ARENA_RANDOMIZER_ATTR_PLAYER_HEALTH "hp"
 #define ARENA_RANDOMIZER_ATTR_MAX_PLAYER_HEALTH "max_hp"
+#define ARENA_RANDOMIZER_ATTR_AMMO_REGENERATION "ammo_regen"
+#define ARENA_RANDOMIZER_ATTR_CONDITIONS "conditions"
 
 #define FILE_LOCATION "cfg/hmmr/arena-randomizer/loadouts.json"
 #define FILE_MAX_SIZE (1 * 1024 * 1024)
@@ -88,6 +90,9 @@
 #define HH_KILL_EXPLOSION "env_explosion"
 
 #define DAMAGE_CUSTOM_TYPE_BLEED 34
+
+#define TF2_ATTRIBUTE_POSITIVE_MAX_HEALTH 26
+#define TF2_ATTRIBUTE_NEGATIVE_MAX_HEALTH 125
 #endif
 
 enum ArenaRandomizerSpecialRoundLogic 
@@ -170,9 +175,6 @@ stock void SetHealthForAll(int health)
 	}
 }
 
-#define TF2_ATTRIBUTE_POSITIVE_MAX_HEALTH 26
-#define TF2_ATTRIBUTE_NEGATIVE_MAX_HEALTH 125
-
 stock void SetMaxHealthForAll(int health)
 {
 	for (int i = 1; i <= MaxClients; i++)
@@ -185,7 +187,11 @@ stock void SetMaxHealthForAll(int health)
 			}
 			else
 			{
-				MalletSetAttribute(i, TF2_ATTRIBUTE_NEGATIVE_MAX_HEALTH, float(health));
+				/**
+				 * The attribute reduces the health by X, a negative value will break
+				 * it so we need to convert it back to a positive value.
+				 */
+				MalletSetAttribute(i, TF2_ATTRIBUTE_NEGATIVE_MAX_HEALTH, float(-health));
 			}
 		}
 	}
@@ -260,6 +266,55 @@ stock void SetAllPlayersTeam(TFClassType class, TFTeam team)
 	}
 
 	InternalRegeneratePlayers();
+}
+
+stock void SetWeaponAmmo(int client, int slot1, int slot2)
+{
+    int ActiveWeapon = GetEntDataEnt2(client, FindSendPropInfo("CTFPlayer", "m_hActiveWeapon"));
+
+    if (IsValidEntity(ActiveWeapon))
+	{
+		if (slot1 != -2)
+		{
+			SetEntData(ActiveWeapon, FindSendPropInfo("CBaseCombatWeapon", "m_iClip1"), slot1, 4);
+		}
+
+        if (slot2 != -2)
+		{
+			SetEntData(client, FindSendPropInfo("CTFPlayer", "m_iAmmo") + 4, slot2, 4);
+        	SetEntData(client, FindSendPropInfo("CTFPlayer", "m_iAmmo") + 8, slot2, 4);
+		}
+    }
+}
+
+stock void SetWeaponAmmoAll(int slot1, int slot2)
+{
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
+			SetWeaponAmmo(i, slot1, slot2);
+		}
+	}
+}
+
+stock void RemoveAllWeapons(int clientIdx)
+{
+    for (int weaponSlot = 0; weaponSlot <= 5; weaponSlot++)
+	{
+		TF2_RemoveWeaponSlot(clientIdx, weaponSlot);
+	}
+}
+
+stock void RemoveAllWeaponsAll()
+{
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
+			RemoveAllWeapons(i);
+		}
+	}
 }
 
 stock int GetAliveTeamCount(int team)

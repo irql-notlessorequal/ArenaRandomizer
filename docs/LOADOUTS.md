@@ -42,6 +42,13 @@ The `loadouts.json` contains all the loadout rounds in Arena Randomizer.
 		"on_kill": [array/string] (optional)
 		"hp": [integer] (optional)
 		"max_hp": [integer] (optional)
+		"ammo_regen": [integer] (optional)
+		"conditions": [ (optional)
+			{
+				"id": [integer] (mandatory)
+				"duration": [float] (mandatory)
+			}
+		]
 	},
 	"special_round": [boolean] (optional)
 }

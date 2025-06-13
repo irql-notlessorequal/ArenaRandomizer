@@ -29,7 +29,7 @@ public Plugin myinfo =
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "0.0.46",
+	version = "0.0.51",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -49,6 +49,7 @@ static ArrayStack EndRoundAudioQueue;
 static ArrayList OnKillAudioList;
 static Handle SuddenDeathTimer = INVALID_HANDLE;
 static Handle SuddenDeathDrainTimer = INVALID_HANDLE;
+static Handle AmmoRegenTimer = INVALID_HANDLE;
 
 Handle GameTextHandle = INVALID_HANDLE;
 Handle CON_VAR_ARENA_USE_QUEUE = INVALID_HANDLE;
@@ -573,54 +574,9 @@ bool __CONVERT_TO_COMPATIBLE_TYPE(const JSON_Object attribute, const char[] name
 	}
 }
 
-public bool JSON_CONTAINS_KEY(const JSON_Object obj, const char[] key) {
+stock bool JSON_CONTAINS_KEY(const JSON_Object obj, const char[] key)
+{
 	return obj.GetIndex(key) != -1;
-}
-
-public void RemoveAllWeapons(int clientIdx)
-{
-    for (int weaponSlot = 0; weaponSlot <= 5; weaponSlot++)
-	{
-		TF2_RemoveWeaponSlot(clientIdx, weaponSlot);
-	}
-}
-
-public void RemoveAllWeaponsAll()
-{
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			RemoveAllWeapons(i);
-		}
-	}
-}
-
-public void SetWeaponAmmoAll(int slot1, int slot2) {
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			SetWeaponAmmo(i, slot1, slot2);
-		}
-	}
-}
-
-public void SetWeaponAmmo(int client, int slot1, int slot2)
-{
-    int ActiveWeapon = GetEntDataEnt2(client, FindSendPropOffs("CTFPlayer", "m_hActiveWeapon"));
-    if (IsValidEntity(ActiveWeapon))
-	{
-		if (slot1 != -2)
-		{
-			SetEntData(ActiveWeapon, FindSendPropOffs("CBaseCombatWeapon", "m_iClip1"), slot1, 4);
-		}
-        if (slot2 != -2)
-		{
-			SetEntData(client, FindSendPropOffs("CTFPlayer", "m_iAmmo") + 4, slot2, 4);
-        	SetEntData(client, FindSendPropOffs("CTFPlayer", "m_iAmmo") + 8, slot2, 4);
-		}
-    }
 }
 
 bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool printAttribs)
@@ -701,7 +657,7 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool p
 	return true;
 }
 
-public bool GiveWeaponToAllWithAttributes(int weaponId, const char[] weaponName, int level, int quality, int weaponSlot, JSON_Array attributes)
+bool GiveWeaponToAllWithAttributes(int weaponId, const char[] weaponName, int level, int quality, int weaponSlot, JSON_Array attributes)
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -729,7 +685,7 @@ public bool GiveWeaponToAllWithAttributes(int weaponId, const char[] weaponName,
 	return true;
 }
 
-public bool GiveWeaponToTeamWithAttributes(TFTeam team, int weaponId, const char[] weaponName, int level, int quality, int weaponSlot, JSON_Array attributes)
+bool GiveWeaponToTeamWithAttributes(TFTeam team, int weaponId, const char[] weaponName, int level, int quality, int weaponSlot, JSON_Array attributes)
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -761,7 +717,7 @@ public bool GiveWeaponToTeamWithAttributes(TFTeam team, int weaponId, const char
 }
 
 
-public bool GiveWeaponToAll(int weaponId, const char[] weaponName, int level, int quality, int weaponSlot)
+bool GiveWeaponToAll(int weaponId, const char[] weaponName, int level, int quality, int weaponSlot)
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -784,7 +740,7 @@ public bool GiveWeaponToAll(int weaponId, const char[] weaponName, int level, in
 	return true;
 }
 
-public bool GiveWeaponToTeam(TFTeam team, int weaponId, const char[] weaponName, int level, int quality, int weaponSlot)
+bool GiveWeaponToTeam(TFTeam team, int weaponId, const char[] weaponName, int level, int quality, int weaponSlot)
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -808,6 +764,46 @@ public bool GiveWeaponToTeam(TFTeam team, int weaponId, const char[] weaponName,
 		}
 	}
 	return true;
+}
+
+void SetupAmmoRegen(int amount)
+{
+	if (AmmoRegenTimer != INVALID_HANDLE)
+	{
+		ThrowError("[ArenaRandomizer] AmmoRegenTimer already set? wtf");
+	}
+	else
+	{
+		AmmoRegenTimer = CreateTimer(5.0, DoAmmoRegen, amount, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	}
+}
+
+public Action DoAmmoRegen(Handle timer, any data)
+{
+#if defined(DEBUG)
+	PrintToServer("[ArenaRandomizer::DoAmmoRegen] [DEBUG] Giving ammo to players...");
+#endif
+
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && IsPlayerAlive(i))
+		{
+			for (int slot = TFWeaponSlot_Primary; slot < TFWeaponSlot_Melee; slot++)
+			{
+				int entity = GetPlayerWeaponSlot(i, slot);
+				if (entity <= 0)
+				{
+					continue;
+				}
+
+				int ammoType = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
+
+				GivePlayerAmmo(i, view_as<int>(data), ammoType, true);
+			}
+		}
+	}
+
+	return Plugin_Continue;
 }
 
 public void RoundStartAlternate(Handle event, const char[] name, bool dontBroadcast)
@@ -1190,6 +1186,19 @@ void ArenaRound()
 			SetHealthForAll(health);
 		}
 
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_AMMO_REGENERATION))
+		{
+			int ammo = attributes.GetInt(ARENA_RANDOMIZER_ATTR_AMMO_REGENERATION);
+
+			if (ammo == -1)
+			{
+				SetFailState("ArenaRound: Invalid formatted data object, 'attributes' had an invalid ammo regeneration value.");
+				return;				
+			}
+
+			SetupAmmoRegen(ammo);
+		}
+
 		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_ROUND_START))
 		{
 			JSON_Object roundStart = attributes.GetObject(ARENA_RANDOMIZER_ATTR_ROUND_START);
@@ -1288,6 +1297,47 @@ void ArenaRound()
 				}
 			}			
 		}
+
+		if (JSON_CONTAINS_KEY(attributes, ARENA_RANDOMIZER_ATTR_CONDITIONS))
+		{
+			JSON_Object conditions = attributes.GetObject(ARENA_RANDOMIZER_ATTR_CONDITIONS);
+
+			if (conditions == null || !conditions.IsArray)
+			{
+				SetFailState("ArenaRound: Invalid formatted data object, 'conditions' is not an array.");
+				return;				
+			}
+
+			JSON_Array conditionsArray = view_as<JSON_Array>(conditions);
+
+			for (int condIdx = 0; condIdx < conditionsArray.Length; condIdx++)
+			{
+				JSON_Object conditionEntry = conditionsArray.GetObject(condIdx);
+
+				int condition = conditionEntry.GetInt("id");
+				if (condition == -1)
+				{
+					PrintToServer("[WARNING] ArenaRound: Invalid condition ID or missing!");
+					continue;
+				}
+
+				float duration = conditionEntry.GetFloat("duration", -2.0);
+				if (duration == -2.0)
+				{
+					PrintToServer("[WARNING] ArenaRound: Invalid condition duration or missing!");
+					continue;
+				}
+
+				/**
+				 * TODO(irql):
+				 * Add a team filtering entry...
+				 */
+				for (int client = 1; client <= MaxClients; client++)
+				{
+					TF2_AddCondition(client, view_as<TFCond>(condition), duration);
+				}
+			}
+		}
 	}
 
 	bool IsSpecialRound = entry.GetBool("special_round");
@@ -1296,7 +1346,7 @@ void ArenaRound()
 
 	if (JSON_CONTAINS_KEY(entry, "special_round_code"))
 	{
-		/* Not my problem(tm) if the user misconfigured the loadout JSON. */
+		/* It's Not My Problem(TM) if the user misconfigured the loadout JSON. */
 		SpecialRoundLogic = view_as<ArenaRandomizerSpecialRoundLogic>(entry.GetInt("special_round_code", DISABLED));
 	}
 	else
@@ -1366,8 +1416,10 @@ public void RoundEndAlternate(Handle event, const char[] name, bool dontBroadcas
 
 	int team = GetEventInt(event, "team", -1);
 
+#if defined(DEBUG)
 	PrintToServer("[ArenaRandomizer::RoundEndAlternate] [DEBUG] team=%d, remainingBlue=%d, remainingRed=%d, killBasedWin=%d",
 		team, remainingBlue, remainingRed, killBasedWin);
+#endif
 
 	if (team == -1)
 	{
@@ -1406,6 +1458,12 @@ void DoRoundEnd()
 	if (SuddenDeathDrainTimer != INVALID_HANDLE)
 	{
 		delete SuddenDeathDrainTimer;
+	}
+
+	/* Stop giving players ammo if enabled by loadout. */
+	if (AmmoRegenTimer != INVALID_HANDLE)
+	{
+		delete AmmoRegenTimer;
 	}
 
 	bool IsMapEnd = HasMapEnded();
@@ -1774,6 +1832,7 @@ void HH_Arrow_Explode(int entity, int other)
 	
 	int owner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
 	int team = GetEntProp(entity, Prop_Send, "m_iTeamNum");
+	int flags = GetEntityFlags(owner);
 	
 	int explosion = CreateEntityByName("env_explosion");
 	if (!IsValidEntity(explosion))
@@ -1799,4 +1858,22 @@ void HH_Arrow_Explode(int entity, int other)
 	DispatchSpawn(explosion);
 	
 	AcceptEntityInput(explosion, "Explode");
+
+	if ((flags & FL_DUCKING))
+	{
+#define HH_ARROW_JUMP_FORCE 255
+		float vecAng[3];
+		GetClientEyeAngles(owner, vecAng);
+
+		float vecVel[3];
+		vecVel[0] = Cosine(DegToRad(vecAng[0])) * Cosine(DegToRad(vecAng[1])) * HH_ARROW_JUMP_FORCE;
+		vecVel[1] = Cosine(DegToRad(vecAng[0])) * Sine(DegToRad(vecAng[1])) * HH_ARROW_JUMP_FORCE;
+		vecVel[2] = (((vecAng[0]) * 1.5) + 90.0) * 4.0;
+
+		TeleportEntity(owner, NULL_VECTOR, NULL_VECTOR, vecVel);
+
+		SetEntProp(owner, Prop_Send, "m_bJumping", true);
+		SetEntityFlags(owner, flags & ~FL_ONGROUND);
+		TF2_AddCondition(owner, TFCond_BlastJumping);
+	}
 }
