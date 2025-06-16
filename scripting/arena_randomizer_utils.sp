@@ -552,3 +552,66 @@ stock bool HurtEntity(int entity, float damage, int attacker=0, int damageType=D
 	
 	return true;
 }
+
+stock int GetTotalRoundCount()
+{
+	/**
+	 * This is really inaccurate but funny.
+	 */
+
+	int blue = GetTeamScore(view_as<int>(TFTeam_Blue));
+	int red = GetTeamScore(view_as<int>(TFTeam_Red));
+
+	return (blue + red + 1);
+}
+
+stock void GetTF2ClassName(char output[16], TFClassType classType)
+{
+	switch (classType)
+	{
+		case TFClass_Scout:
+		{
+			strcopy(output, sizeof (output), "Scout");
+		}
+
+		case TFClass_Soldier:
+		{
+			strcopy(output, sizeof (output), "Soldier");
+		}
+
+		case TFClass_Pyro:
+		{
+			strcopy(output, sizeof (output), "Pyro");
+		}
+
+		case TFClass_DemoMan:
+		{
+			strcopy(output, sizeof (output), "Demoman");
+		}
+
+		case TFClass_Heavy:
+		{
+			strcopy(output, sizeof (output), "Heavy");
+		}
+
+		case TFClass_Engineer:
+		{
+			strcopy(output, sizeof (output), "Engineer");
+		}
+
+		case TFClass_Medic:
+		{
+			strcopy(output, sizeof (output), "Medic");
+		}
+
+		case TFClass_Sniper:
+		{
+			strcopy(output, sizeof (output), "Sniper");
+		}
+		
+		case TFClass_Spy:
+		{
+			strcopy(output, sizeof (output), "Spy");
+		}
+	}
+}

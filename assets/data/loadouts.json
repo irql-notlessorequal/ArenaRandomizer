@@ -1354,6 +1354,29 @@
 	},
 	{
 		"classes": {
+			"all": "sniper"
+		},
+		"weapons": [
+			{
+				"id": 1098,
+				"name": "tf_weapon_sniperrifle_classic",
+				"slot": "primary"
+			},
+			{
+				"id": 642,
+				"name": "tf_wearable",
+				"slot": "secondary"
+			},
+			{
+				"id": 171,
+				"name": "tf_weapon_club",
+				"slot": "melee"
+			}
+		],
+		"name": "The Loadout Everyone Hates"
+	},
+	{
+		"classes": {
 			"all": "heavy"
 		},
 		"weapons": [

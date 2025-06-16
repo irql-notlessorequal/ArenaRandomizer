@@ -29,7 +29,7 @@ public Plugin myinfo =
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "0.0.52",
+	version = "0.0.53",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -1376,8 +1376,6 @@ void ArenaRound()
 
 	bool IsSpecialRound = entry.GetBool("special_round");
 
-	ShowTextPrompt(_name, IsSpecialRound ? SPECIAL_ROUND_UI_ICON : DEFAULT_UI_ICON, 14.92);
-
 	if (JSON_CONTAINS_KEY(entry, "special_round_code"))
 	{
 		/* It's Not My Problem(TM) if the user misconfigured the loadout JSON. */
@@ -1388,21 +1386,110 @@ void ArenaRound()
 		SpecialRoundLogic = DISABLED;
 	}
 
-	if (!CustomRoundStartMusic)
+	if (SpecialRoundLogic != CLASS_WARFARE_LIKE)
 	{
-		int music_idx = GetRandomInt(0, ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH - 1);
-		if (IsSpecialRound)
+		ShowTextPrompt(_name, IsSpecialRound ? SPECIAL_ROUND_UI_ICON : DEFAULT_UI_ICON, 14.92);
+
+		if (!CustomRoundStartMusic)
 		{
-			EmitSoundToAll(ARENA_RANDOMIZER_ROUND_START_SPECIAL[music_idx]);
+			int music_idx = GetRandomInt(0, ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH - 1);
+
+			if (IsSpecialRound)
+			{
+				EmitSoundToAll(ARENA_RANDOMIZER_ROUND_START_SPECIAL[music_idx]);
+			}
+			else
+			{
+				EmitSoundToAll(ARENA_RANDOMIZER_ROUND_START[music_idx]);
+			}
 		}
-		else
+
+		MC_PrintToChatAll("[{springgreen}ArenaRandomizer{white}] This round's loadout is '%s%s{white}'", 
+			(IsSpecialRound ? "{indianred}" : "{mediumblue}"), _name);
+	}
+	else
+	{
+		/**
+		 * Display a Class Warfare like HUD instead.
+		 */
+
+		SetHudTextParams(
+			.x = -1.0,
+			.y = 0.3,
+			.holdTime = 10.0,
+			.r = 255,
+			.g = 255,
+			.b = 255,
+			.a = 255,
+			.effect = 0,
+			.fxTime = 0.0,
+			.fadeIn = 0.0,
+			.fadeOut = 0.0
+		);
+
+		int blueTeam = -1, redTeam = -1;
+		char blue[16], red[16];
+
+		/**
+		 * We sadly have to iterate over the clients
+		 * since I don't want to make the handler
+		 * variables accessible to the rest of the function.
+		 * 
+		 * This sucks.
+		 */
+		for (int client = 1; client <= MaxClients; client++)
 		{
-			EmitSoundToAll(ARENA_RANDOMIZER_ROUND_START[music_idx]);
+			/* We're done. */
+			if (blueTeam != -1 && redTeam != -1)
+			{
+				break;
+			}
+
+			if (!IsClientInGame(client))
+			{
+				continue;
+			}
+
+			if (!IsPlayerAlive(client))
+			{
+				continue;
+			}
+
+			if (blueTeam == -1 && GetClientTeam(client) == view_as<int>(TFTeam_Blue))
+			{
+				blueTeam = TF2_GetPlayerClass(client);
+				continue;
+			}
+
+			if (redTeam == -1 && GetClientTeam(client) == view_as<int>(TFTeam_Red))
+			{
+				redTeam = TF2_GetPlayerClass(client);
+				continue;
+			}
+		}
+
+		GetTF2ClassName(blue, view_as<TFClassType>(blueTeam));
+		GetTF2ClassName(red, view_as<TFClassType>(redTeam));
+
+		for (int client = 1; client <= MaxClients; client++)
+		{
+			if (IsClientInGame(client))
+			{
+				/**
+				 * TODO(irql):
+				 * 
+				 * Something is broken and it's only display for like
+				 * a frame or two in most of the times, wtf Valve?
+				 */
+				ShowHudText(
+					client,
+					-3,
+					"ROUND %d:\n%s %s vs %s %s",
+					GetTotalRoundCount(), "BLU", blue, "RED", red
+				);
+			}
 		}
 	}
-
-	MC_PrintToChatAll("[{springgreen}ArenaRandomizer{white}] This round's loadout is '%s%s{white}'", 
-		(IsSpecialRound ? "{indianred}" : "{mediumblue}"), _name);
 
 	if (SuddenDeathTimer != INVALID_HANDLE)
 	{
@@ -1900,6 +1987,10 @@ void HH_Arrow_Explode(int entity, int other)
 	
 	AcceptEntityInput(explosion, "Explode");
 
+	/**
+	 * TODO(irql):
+	 * We should check if the client is actually close to the arrow.
+	 */
 	if ((flags & FL_DUCKING))
 	{
 #define HH_ARROW_JUMP_FORCE 255
