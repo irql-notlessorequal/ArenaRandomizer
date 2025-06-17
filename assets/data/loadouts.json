@@ -1404,6 +1404,56 @@
 		},
 		"weapons": [
 			{
+				"id": 16,
+				"name": "tf_weapon_smg",
+				"slot": "secondary",
+				"holiday": "!christmas",
+
+				"ammo_reserve": 5000,
+
+				"attributes": [
+					{
+						"id": 6,
+						"name": "mult_postfiredelay",
+						"value": 0.5
+					},
+					{
+						"id": 78,
+						"name": "mult_maxammo_secondary",
+						"value": 10
+					}
+				]
+			},
+			{
+				"id": 1149,
+				"name": "tf_weapon_smg",
+				"slot": "secondary",
+				"holiday": "christmas",
+
+				"ammo_reserve": 5000,
+
+				"attributes": [
+					{
+						"id": 6,
+						"name": "mult_postfiredelay",
+						"value": 0.5
+					},
+					{
+						"id": 78,
+						"name": "mult_maxammo_secondary",
+						"value": 10
+					}
+				]
+			}
+		],
+		"name": "Oops All SMGs!"
+	},
+	{
+		"classes": {
+			"all": "sniper"
+		},
+		"weapons": [
+			{
 				"id": 56,
 				"name": "tf_weapon_compound_bow",
 				"slot": "primary",

@@ -9,6 +9,8 @@ Now with:
 
 (TODO)
 
+## Credits
+
 ## License
 
 ```

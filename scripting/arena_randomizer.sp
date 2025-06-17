@@ -1403,9 +1403,6 @@ void ArenaRound()
 				EmitSoundToAll(ARENA_RANDOMIZER_ROUND_START[music_idx]);
 			}
 		}
-
-		MC_PrintToChatAll("[{springgreen}ArenaRandomizer{white}] This round's loadout is '%s%s{white}'", 
-			(IsSpecialRound ? "{indianred}" : "{mediumblue}"), _name);
 	}
 	else
 	{
@@ -1490,6 +1487,12 @@ void ArenaRound()
 			}
 		}
 	}
+
+	/**
+	 * Print the round loadout to chat regardless.
+	 */
+	MC_PrintToChatAll("[{springgreen}ArenaRandomizer{white}] This round's loadout is %s%s{default}", 
+		(IsSpecialRound ? "{indianred}" : "{mediumblue}"), _name);
 
 	if (SuddenDeathTimer != INVALID_HANDLE)
 	{
@@ -1725,7 +1728,7 @@ public Action DoSuddenDeathHealthDrain(Handle timer)
 	{
 		if (IsClientInGame(client) && IsPlayerAlive(client))
 		{
-			HurtEntity(client, 1.0, _, DMG_GENERIC);
+			TF2_MakeBleed(client, client, 1.0);
 		}
 	}
 
