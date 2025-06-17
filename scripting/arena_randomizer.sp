@@ -1481,7 +1481,7 @@ void ArenaRound()
 				ShowHudText(
 					client,
 					-3,
-					"ROUND %d:\n%s %s vs %s %s",
+					"ROUND %d:\n%s %s versus %s %s",
 					GetTotalRoundCount(), "BLU", blue, "RED", red
 				);
 			}
