@@ -14,6 +14,10 @@
 #include <files>
 #include <morecolors>
 
+#if defined(STEAMWORKS)
+#include <SteamWorks>
+#endif
+
 #include <mallet>
 
 #if !defined(_ARENA_RANDOMIZER_DEFINE)
@@ -57,15 +61,13 @@
 #define ARENA_RANDOMIZER_ATTR_ON_KILL "kill_audio"
 
 #define ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH 3
+#define ARENA_RANDOMIZER_GAMEMODE_END_ARRAY_LENGTH 4
 
 #define PRE_ROUND_AUDIO "hmmr/arena-randomizer/round_start.mp3"
 #define PRE_ROUND_AUDIO_FULL "sound/hmmr/arena-randomizer/round_start.mp3"
 
 #define SUDDEN_DEATH_AUDIO "hmmr/arena-randomizer/sudden_death.mp3"
 #define SUDDEN_DEATH_AUDIO_FULL "sound/hmmr/arena-randomizer/sudden_death.mp3"
-
-#define GAMEMODE_END_AUDIO "hmmr/arena-randomizer/gamemode_end_rare.mp3"
-#define GAMEMODE_END_AUDIO_FULL "sound/hmmr/arena-randomizer/gamemode_end_rare.mp3"
 
 #define TF2_COUNTDOWN_5SECS "vo/announcer_ends_5sec.mp3"
 #define TF2_COUNTDOWN_4SECS "vo/announcer_ends_4sec.mp3"

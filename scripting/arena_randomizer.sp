@@ -24,12 +24,19 @@ static const char ARENA_RANDOMIZER_WORKAROUND_LAE[][] = {
 	"arena_lumberyard_event"
 };
 
+static const char ARENA_RANDOMIZER_GAMEMODE_END[][] = {
+	"hmmr/arena-randomizer/gamemode_end1.mp3",
+	"hmmr/arena-randomizer/gamemode_end2.mp3",
+	"hmmr/arena-randomizer/gamemode_end3.mp3",
+	"hmmr/arena-randomizer/gamemode_end4.mp3"
+};
+
 public Plugin myinfo = 
 {
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "0.0.53",
+	version = "0.0.54",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -370,6 +377,10 @@ public void OnMapInit(const char[] mapName)
 
 	/* Pre-load the required assets to avoid console spam. */
 	SendContentHint();
+
+#if defined(STEAMWORKS)
+	SteamWorks_SetGameDescription("Arena Randomizer");
+#endif
 }
 
 bool MapRequiresWorkaround(const char[] mapName)
@@ -436,7 +447,11 @@ void SendContentHint()
 
 	PrecacheSound(PRE_ROUND_AUDIO);
 	PrecacheSound(SUDDEN_DEATH_AUDIO);
-	PrecacheSound(GAMEMODE_END_AUDIO);
+
+	for (int idx = 0; idx < ARENA_RANDOMIZER_GAMEMODE_END_ARRAY_LENGTH; idx++)
+	{
+		PrecacheSound(ARENA_RANDOMIZER_GAMEMODE_END[idx]);
+	}
 
 	for (int idx = 0; idx < ARENA_RANDOMIZER_DEFAULT_AUDIO_ARRAY_LENGTH; idx++)
 	{
@@ -466,7 +481,16 @@ void SendContentHint()
 
 	AddFileToDownloadsTable(PRE_ROUND_AUDIO_FULL);
 	AddFileToDownloadsTable(SUDDEN_DEATH_AUDIO_FULL);
-	AddFileToDownloadsTable(GAMEMODE_END_AUDIO_FULL);
+
+	for (int idx = 0; idx < ARENA_RANDOMIZER_GAMEMODE_END_ARRAY_LENGTH; idx++)
+	{
+		char str[PLATFORM_MAX_PATH];
+		
+		StrCat(str, PLATFORM_MAX_PATH, "sound/");
+		StrCat(str, PLATFORM_MAX_PATH, ARENA_RANDOMIZER_GAMEMODE_END[idx]);
+
+		AddFileToDownloadsTable(str);
+	}
 
 	if (CustomAssets != null)
 	{
@@ -1492,7 +1516,7 @@ void ArenaRound()
 	 * Print the round loadout to chat regardless.
 	 */
 	MC_PrintToChatAll("[{springgreen}ArenaRandomizer{white}] This round's loadout is %s%s{default}", 
-		(IsSpecialRound ? "{indianred}" : "{mediumblue}"), _name);
+		(IsSpecialRound ? "{indianred}" : "{mediumturquoise}"), _name);
 
 	if (SuddenDeathTimer != INVALID_HANDLE)
 	{
@@ -1767,10 +1791,9 @@ public Action ResetAllAttributes(Handle timer)
 
 public Action PlayGamemodeEndClip(Handle timer)
 {
-	/** 
-	 * TODO(rake): Make this a 2 in 100 chance.
-	 */
-	EmitSoundToAll(GAMEMODE_END_AUDIO);
+	int idx = GetRandomInt(0, ARENA_RANDOMIZER_GAMEMODE_END_ARRAY_LENGTH - 1);
+	EmitSoundToAll(ARENA_RANDOMIZER_GAMEMODE_END[idx]);
+
 	return Plugin_Stop;
 }
 
