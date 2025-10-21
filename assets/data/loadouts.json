@@ -1650,5 +1650,48 @@
 		"special_round": true,
 		"special_round_code": 1,
 		"name": "The Geneva Suggestion"
+	},
+	{
+		"classes": {
+			"all": "random"
+		},
+		"weapons": [
+			{
+				"id": -2,
+				"name": "dummy",
+				"slot": "any",
+
+				"attributes": [
+					{
+						"id": -1
+					},
+					{
+						"id": -1
+					},
+					{
+						"id": -1
+					},
+					{
+						"id": -1
+					},
+					{
+						"id": -1
+					},
+					{
+						"id": -1
+					},
+					{
+						"id": -1
+					},
+					{
+						"id": -1
+					}
+				]
+			}
+		],
+		"keep_weapons": true,
+		"print_attribs": true,
+		"special_round": true,
+		"name": "Random Attributes!"
 	}
 ]
