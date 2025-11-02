@@ -1533,7 +1533,7 @@ void ArenaRound()
 	/**
 	 * Print the round loadout to chat regardless.
 	 */
-	MC_PrintToChatAll("[{springgreen}ArenaRandomizer{white}] This round's loadout is %s%s{default}", 
+	__PRINT_TO_CHAT_ALL("[{springgreen}ArenaRandomizer{white}] This round's loadout is %s%s{default}", 
 		(IsSpecialRound ? "{indianred}" : "{mediumturquoise}"), _name);
 
 	if (SuddenDeathTimer != INVALID_HANDLE)
