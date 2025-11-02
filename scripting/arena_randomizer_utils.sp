@@ -32,7 +32,15 @@
 #include <SteamWorks>
 #endif
 
+#if defined(EXPERIMENTAL_NON_MALLET)
+#include <tf2attributes>
+#include <tf2items>
+#define __SET_ATTRIBUTE TF2Attrib_SetByDefIndex
+#error "Feature unavailable as it is incomplete."
+#else
 #include <mallet>
+#define __SET_ATTRIBUTE MalletSetAttribute
+#endif
 
 #if defined(MC_MAX_MESSAGE_LENGTH) && defined(MC_GAME_DODS)
 #define __PRINT_TO_CHAT_ALL MC_PrintToChatAll
@@ -208,7 +216,7 @@ stock void SetMaxHealthForAll(int health)
 		{
 			if (health)
 			{
-				MalletSetAttribute(i, TF2_ATTRIBUTE_POSITIVE_MAX_HEALTH, float(health));
+				__SET_ATTRIBUTE(i, TF2_ATTRIBUTE_POSITIVE_MAX_HEALTH, float(health));
 			}
 			else
 			{
@@ -216,7 +224,7 @@ stock void SetMaxHealthForAll(int health)
 				 * The attribute reduces the health by X, a negative value will break
 				 * it so we need to convert it back to a positive value.
 				 */
-				MalletSetAttribute(i, TF2_ATTRIBUTE_NEGATIVE_MAX_HEALTH, float(-health));
+				__SET_ATTRIBUTE(i, TF2_ATTRIBUTE_NEGATIVE_MAX_HEALTH, float(-health));
 			}
 		}
 	}
@@ -228,7 +236,7 @@ stock void SetMovementSpeedForAll(float value)
 	{
 		if (IsClientInGame(client) && IsPlayerAlive(client))
 		{
-			MalletSetAttribute(client, TF2_ATTRIBUTE_MOVEMENT_SPEED_BOOST, value);
+			__SET_ATTRIBUTE(client, TF2_ATTRIBUTE_MOVEMENT_SPEED_BOOST, value);
 		}
 	}
 }
