@@ -54,7 +54,7 @@ public Plugin myinfo =
 	name = "Arena Randomizer",
 	author = "IRQL_NOT_LESS_OR_EQUAL",
 	description = "An improved re-implementation/remake of TF2TightRope's Project Ghost.",
-	version = "0.0.54",
+	version = "0.0.56",
 	url = "https://github.com/irql-notlessorequal/ArenaRandomizer"
 }
 
@@ -678,7 +678,7 @@ bool ApplyWeaponAttributes(int weapon, int client, JSON_Array attributes, bool p
 		}
 
 		/* Ignore errors when we're using random attributes since our process is literal trial and error. */
-		int ret = MalletSetAttribute(weapon, id, value);
+		int ret = __SET_ATTRIBUTE(weapon, id, value);
 
 		if (ret <= 0 && !is_random)
 		{
