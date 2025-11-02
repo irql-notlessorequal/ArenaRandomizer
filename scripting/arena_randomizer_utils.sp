@@ -34,6 +34,12 @@
 
 #include <mallet>
 
+#if defined(MC_MAX_MESSAGE_LENGTH) && defined(MC_GAME_DODS)
+#define __PRINT_TO_CHAT_ALL MC_PrintToChatAll
+#else
+#define __PRINT_TO_CHAT_ALL CPrintToChatAll
+#endif
+
 #if !defined(_ARENA_RANDOMIZER_DEFINE)
 #define _ARENA_RANDOMIZER_DEFINE 1
 
